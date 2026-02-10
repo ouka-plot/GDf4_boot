@@ -45,59 +45,75 @@ int main(void){
 	iic_init();
 	gd25q40e_init();
 	
-	uint8_t buf[256]={0};
+	// 测试OTA flag写入
+	u0_printf("====== Testing OTA Flag ======\r\n");
 	
-	//先擦除后写
-//	gd25_erase64k(0);
-//	//64KB,256个页，每页256B
-	uint16_t i,j=0;
-//	for(i=0;i<256;i++) 
-//	{
-//		for(j=0;j<256;j++)
-//		{
-//			buf[j]=i;  // 每页存储页号
-//			
-//		}
-//		gd25_pagewrite(buf,i);
-//	
-//	}
-//	delay_ms(100);
-//	
-//	uint8_t bufrecv[256]={0};
-//	// 读 页（总共256字节）
-//	for(i=0; i<256; i++) 
-//	{
-//		gd25_read(bufrecv,i*256,256); //一次读256B
-//		for(j=0;j<256;j++)
-//		{
-//		
-//			u0_printf("Read page %d address %d status: %d\r\n", i,j,bufrecv[j] );
-
-//			
-//		}
-//	
-//	}
-//	
-//	
-	uint32_t wbuf[256];
-	for (i=0;i<256;i++){
-		wbuf[i]=0x12345678;
-		
+	// 先清空EEPROM地址0的数据
+	u0_printf("Clearing EEPROM at address 0...\r\n");
+	OTA_InfoCB clear_ota = {0};
+	uint8_t ret = AT24_write_page(0, (uint8_t *)&clear_ota, OTA_INFO_SIZE);
+	if(ret != 0){
+		u0_printf("Clear failed, error: %d\r\n", ret);
+	}
+	delay_ms(100);
+	
+	// 构造OTA信息结构
+	OTA_InfoCB test_ota = {0};  // 明确初始化为0
+	test_ota.boot_flag = BOOT_FLAG_SET;    // 设置bootloader flag
+	test_ota.app_addr = 0x08020000;        // 设置应用地址
+	
+	u0_printf("Before write - boot_flag: 0x%x, app_addr: 0x%x\r\n", test_ota.boot_flag, test_ota.app_addr);
+	
+	// 打印结构体的实际字节
+	u0_printf("test_ota bytes to write:\r\n");
+	uint8_t *ptr = (uint8_t *)&test_ota;
+	for(int i = 0; i < 8; i++){
+		u0_printf("[%d]=0x%02x ", i, ptr[i]);
+	}
+	u0_printf("\r\n");
+	
+	// 单独测试写一个字节
+	u0_printf("Testing single byte write at address 100...\r\n");
+	uint8_t test_byte = 0xAB;
+	ret = AT24_write_page(100, &test_byte, 1);
+	u0_printf("Single byte write result: %d\r\n", ret);
+	delay_ms(50);
+	uint8_t read_test = 0;
+	AT24_read_page(100, &read_test, 1);
+	u0_printf("Read back: 0x%02x\r\n", read_test);
+	
+	// 将OTA信息写入EEPROM地址0
+	u0_printf("Writing full OTA structure to EEPROM...\r\n");
+	ret = AT24_write_page(0, (uint8_t *)&test_ota, OTA_INFO_SIZE);
+	if(ret != 0){
+		u0_printf("Write OTA failed, error: %d\r\n", ret);
+	}else{
+		u0_printf("Write OTA success\r\n");
 	}
 	
-//	// 注意：Sector 0-3 是程序区，不能擦除！
-//	// 使用 Sector 4 (64KB, 起始地址 0x08010000) 进行测试
-//	#define TEST_FLASH_ADDR  0x08010000  // Sector 4 起始地址
-//	
-//	gd32_eraseflash(4, 1);  // 擦除 Sector 4
-//	gd32_writeflash(TEST_FLASH_ADDR, wbuf, 256);  // 写入 256 个 word (1KB)
-//	
-//	// 读取并验证
-//	for(j=0; j<256; j++)
-//	{
-//		uint32_t readval = gd32_readflash(TEST_FLASH_ADDR + j*4);
-//		u0_printf("Read flash addr 0x%08X: 0x%08X\r\n", TEST_FLASH_ADDR + j*4, readval);
-//	}
+	delay_ms(100);
+	
+	// 读取原始字节数据进行调试
+	u0_printf("Raw bytes at address 0:\r\n");
+	uint8_t raw_bytes[8] = {0};
+	AT24_read_page(0, raw_bytes, 8);
+	for(int i = 0; i < 8; i++){
+		u0_printf("[%d]=0x%02x ", i, raw_bytes[i]);
+	}
+	u0_printf("\r\n");
+	
+	// 重新读取OTA信息到ota_info全局变量
+	u0_printf("Reading OTA flag from EEPROM...\r\n");
+	AT24_ReadOTAInfo();
+	
+	u0_printf("OTA flag value: 0x%x\r\n", ota_info.boot_flag);
+	u0_printf("OTA app_addr: 0x%x\r\n", ota_info.app_addr);
+	
+	// 检查boot branch
+	u0_printf("Checking bootloader branch...\r\n");
+    bootloader_branch();
+
+
 	while(1) 
     {
     }

@@ -1,3 +1,11 @@
+/*
+ * @Author: oukaa 3328236081@qq.com
+ * @Date: 2026-02-06 22:06:53
+ * @LastEditors: oukaa 3328236081@qq.com
+ * @LastEditTime: 2026-02-10 18:25:45
+ * @FilePath: \GDf4_boot\Driver\BSP\Source\fmc.c
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include "fmc.h"
 #include "gd32f4xx_fmc.h"
 

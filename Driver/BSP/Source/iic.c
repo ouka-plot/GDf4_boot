@@ -30,14 +30,15 @@ void iic_start(){
  
 }
 //stop
-
 void iic_stop(){
-    IIC_SCL_H;
-	delay_us(2);
-	IIC_SDA_L;
-	delay_us(2);
-    IIC_SDA_H;
-	delay_us(2);
+    IIC_SCL_L;      // 先拉低SCL
+    delay_us(2);
+    IIC_SDA_L;      // SDA拉低（SCL低时可以改变SDA）
+    delay_us(2);
+    IIC_SCL_H;      // SCL拉高
+    delay_us(2);
+    IIC_SDA_H;      // SCL高时SDA从低到高 = STOP信号
+    delay_us(2);
 }
 //send 1 type
 void iic_send_byte(uint8_t data){

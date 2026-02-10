@@ -415,11 +415,6 @@
               <FilePath>..\Driver\BSP\Source\iic.c</FilePath>
             </File>
             <File>
-              <FileName>AT24c02.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Driver\BSP\Source\AT24c02.c</FilePath>
-            </File>
-            <File>
               <FileName>gd25q40e.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Driver\BSP\Source\gd25q40e.c</FilePath>
@@ -428,6 +423,16 @@
               <FileName>spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Driver\BSP\Source\spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>AT24c256.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Driver\BSP\Source\AT24c256.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Driver\BSP\Source\boot.c</FilePath>
             </File>
           </Files>
         </Group>

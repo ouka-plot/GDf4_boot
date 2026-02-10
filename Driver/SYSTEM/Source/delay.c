@@ -1,6 +1,6 @@
 #include "delay.h"
 #include "core_cm4.h"
-//≥ı ºªØ ±÷”
+//?????
 void delay_init(void){
 
   systick_clksource_set(SYSTICK_CLKSOURCE_HCLK);
