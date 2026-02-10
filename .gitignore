@@ -1,0 +1,44 @@
+# Keil MDK Output Files
+Output/
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.bin
+*.htm
+*.lnp
+*.sct
+*.dep
+*.lst
+*.map
+*.i
+*.bak
+
+# Keil MDK Project Files (User-specific)
+*.uvguix.*
+JLinkLog.txt
+JLinkSettings.ini
+*.scvd
+ExtDll.iex
+
+# Listings and Objects
+Project/Listings/
+Project/Objects/
+
+# Backup files
+*.bak
+*.orig
+
+# Debug files
+DebugConfig/
+
+# RTE Components (auto-generated)
+RTE/
+
+# Pack files
+*.pack
+
+# Temporary files
+*.tmp
+*~
