@@ -3,19 +3,20 @@
         {
             "name": "Target 1",
             "includePath": [
-                "d:\\desktop\\GDf4_boot\\User",
-                "d:\\desktop\\GDf4_boot\\Driver\\LIB\\Include",
-                "d:\\desktop\\GDf4_boot\\Driver\\CMSIS\\Include",
-                "d:\\desktop\\GDf4_boot\\Driver\\SYSTEM\\Include",
-                "d:\\desktop\\GDf4_boot\\Driver",
-                "d:\\desktop\\GDf4_boot\\Driver\\BSP\\Include",
-                "d:\\desktop\\GDf4_boot\\Driver\\BSP\\Source",
-                "d:\\desktop\\GDf4_boot\\Driver\\CMSIS\\Source",
-                "d:\\desktop\\GDf4_boot\\Driver\\LIB\\Source",
-                "d:\\desktop\\GDf4_boot\\Driver\\SYSTEM\\Source"
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\User",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\LIB\\Include",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\CMSIS\\Include",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\SYSTEM\\Include",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\BSP\\Include",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\BSP\\Source",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\CMSIS\\Source",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\LIB\\Source",
+                "d:\\desktop\\GDf4_boot\\GDf4_boot\\Driver\\SYSTEM\\Source"
             ],
             "defines": [
                 "GD32F470_MD",
+                "__TARGET_FPU_VFP",
                 "__CC_ARM",
                 "__arm__",
                 "__align(x)=",

@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug GD32 with JLink",
+            "cwd": "${workspaceFolder}",
+            "executable": "./Output/GDf4_boot.elf", // 重点：指向 Docker 编出的 elf
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main", // 调试开始时自动停在 main 函数
+            "servertype": "jlink",
+            "device": "GD32F470VG",    // 换成你板子上芯片的精确型号
+            "interface": "swd",
+            "ipAddress": "localhost",
+            "serialNumber": "",        // 如果只有一台Jlink，留空即可
+            "jlinkpath": "D:\\software\\jlink\\JLink_V916a\\JLinkGDBServerCL.exe", // 重点：指向你的 Jlink GDB 程序
+            "sourceFileMap": {
+                "/app": "${workspaceFolder}" // 将 Docker 容器内的 /app 映射到本地工作区
+            }
+        }
+    ]
+}

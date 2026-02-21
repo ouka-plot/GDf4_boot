@@ -1,3 +1,11 @@
+/*
+ * @Author: oukaa 3328236081@qq.com
+ * @Date: 2026-02-18 21:44:12
+ * @LastEditors: oukaa 3328236081@qq.com
+ * @LastEditTime: 2026-02-18 23:26:44
+ * @FilePath: \GDf4_boot\GDf4_boot\Driver\BSP\Include\usart.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #ifndef __USART_H 
 #define __USART_H
 
@@ -15,10 +23,10 @@
 
 
 
-#define rx_max 256 //单次传输最大数据字节
-#define rx_bufmax 2048
+#define rx_max 1100 //单次传输最大数据字节（Ymodem 1K包需要1029字节）
+#define rx_bufmax 4096
 #define tx_bufmax 2048
-#define ucb_num 10//最多标记控制块
+#define ucb_num 4//最多标记控制块
 
 
 typedef struct
@@ -44,7 +52,7 @@ extern uint8_t uart_rxbuf[rx_bufmax];
 extern uint8_t uart_txbuf[tx_bufmax];
 
 extern uart_rxbuff_ptr u0_rxbuff_ptr;
-extern uart_ucb u0_ucb;
+extern volatile uart_ucb u0_ucb;
 
 
 void usart0_init(uint32_t baudrate);

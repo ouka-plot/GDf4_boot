@@ -1,0 +1,120 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Docker-CMake-Configure",
+            "type": "shell",
+            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env cmake -BOutput -GNinja",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker-Ninja-Build",
+            "type": "shell",
+            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env ninja -C Output",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "autoDetect",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^/app/(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "Clean Output",
+            "type": "shell",
+            "command": "Remove-Item -Recurse -Force Output/*",
+            "problemMatcher": []
+        },
+        {
+            "label": "Flash-Device",
+            "type": "shell",
+            "command": ".\\flash.bat",
+            "group": "build",
+            "dependsOn": [
+                "Docker-Ninja-Build"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "🚀 一键构建烧录",
+            "dependsOn": [
+                "Flash-Device"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔄 完整重建烧录",
+            "dependsOn": [
+                "Docker-CMake-Configure",
+                "Docker-Ninja-Build",
+                "Flash-Device"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: gcc.exe 生成活动文件",
+            "command": "D:\\software\\x86_64-15.1.0-release-win32-seh-msvcrt-rt_v12-rev0\\mingw64\\bin\\gcc.exe",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "调试器生成的任务。"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: cl.exe 生成活动文件",
+            "command": "cl.exe",
+            "args": [
+                "/Zi",
+                "/EHsc",
+                "/nologo",
+                "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${file}"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "detail": "调试器生成的任务。"
+        }
+    ]
+}

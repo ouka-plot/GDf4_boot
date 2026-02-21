@@ -1,155 +1,184 @@
-# GDf4_boot
+# GDf4_boot ¡ª GD32F470 Bootloader
 
-## Overview
-This is a bare-metal embedded firmware project for the **GD32F4xx** series microcontroller (ARM Cortex-M4). The project demonstrates peripheral initialization and usage, including USART communication, SPI Flash memory, I2C EEPROM, and internal Flash memory operations.
+»ùÓÚ **GD32F470** (Cortex-M4F @ 240 MHz) µÄ´®¿Ú IAP + OTA Bootloader£¬Ê¹ÓÃ Docker ÈÝÆ÷»¯½»²æ±àÒë¡£
 
-## Hardware
-- **MCU**: GigaDevice GD32F4xx (ARM Cortex-M4)
-- **External Flash**: GD25Q40E (4Mbit SPI Flash)
-- **EEPROM**: AT24C02 (2Kbit I2C EEPROM)
-- **Communication**: USART0 (921600 baud)
-- **Debugger**: SWD/JTAG interface
+## ¹¦ÄÜÌØÐÔ
 
-## Features
-- **USART Communication**: Serial port with printf support for debugging (PA9/PA10, 921600 baud)
-- **SPI Flash**: Read/write operations for GD25Q40E external Flash memory
-- **I2C EEPROM**: Support for AT24C02 EEPROM access
-- **Internal Flash**: Flash Memory Controller (FMC) operations for reading/writing/erasing internal Flash sectors
-- **System Timing**: SysTick and delay functions for precise timing control
-- **Peripheral Drivers**: Modular BSP (Board Support Package) architecture
+| ¹¦ÄÜ | ËµÃ÷ |
+|------|------|
+| **´®¿Ú IAP** | USART0 + Ymodem Ð­Òé£¬½«¹Ì¼þÖ±½ÓÉÕÐ´µ½ÄÚ²¿ Flash APP Çø |
+| **OTA Éý¼¶** | APP ½«¹Ì¼þ°ü´æÈëÍâ²¿ SPI Flash ¡ú ÉèÖÃ EEPROM ±êÖ¾ ¡ú ÖØÆôºó Bootloader ×Ô¶¯°áÔË |
+| **±¸·Ý / »Ö¸´** | ÄÚ²¿ Flash APP Çø 6Ç2 Íâ²¿ SPI Flash Ë«Ïò°áÔË |
+| **´®¿Ú CLI** | ÉÏµç 2 s ÄÚ°´ `w` ½øÈëÃüÁîÐÐ£¬Ö§³Ö²Á³ý¡¢ÏÂÔØ¡¢±¸·Ý¡¢»Ö¸´¡¢²éÑ¯µÈ |
+| **°²È«Ìø×ª** | MSP Ð£Ñé ¡ú NVIC ÇåÀí ¡ú I/D-Cache Ë¢ÐÂ ¡ú ·´³õÊ¼»¯ÍâÉè ¡ú Ìø×ª APP |
 
-## Directory Structure
+## Ó²¼þÆ½Ì¨
+
+| ×é¼þ | ÐÍºÅ / ²ÎÊý |
+|------|-------------|
+| MCU | GD32F470VG ¡ª Cortex-M4F, 1024 KB Flash (Bank0), 192 KB SRAM + 64 KB TCMRAM |
+| Íâ²¿ Flash | GD25Q40E ¡ª 4 Mbit SPI Flash£¨´æ´¢ OTA ¹Ì¼þ°ü£© |
+| EEPROM | AT24C256 ¡ª 256 Kbit I2C EEPROM£¨´æ´¢ OTA Éý¼¶±êÖ¾£© |
+| µ÷ÊÔÆ÷ | J-Link (SWD) |
+| ´®¿Ú | USART0 ¡ª PA9(TX) / PA10(RX)£¬921600 baud£¬8N1 |
+
+## Flash ·ÖÇø
+
+```
+  0x08000000 ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+             ©¦  Bootloader (64 KB)    ©¦  Sector 0-3  (16 KB ¡Á 4)
+  0x08010000 ©À©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©È
+             ©¦                        ©¦  Sector 4    (64 KB)
+             ©¦    APP Çø (960 KB)     ©¦  Sector 5-11 (128 KB ¡Á 7)
+  0x08100000 ©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+
+  Íâ²¿ SPI Flash (GD25Q40E, 512 KB):
+  0x00000000 ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+             ©¦  OTA Header (144 B)    ©¦  magic + ¶ÎÃèÊö
+             ©À©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©È
+             ©¦  ¹Ì¼þÊý¾Ý              ©¦  °´¶Î´æ·Å
+             ©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+```
+
+## OTA Éý¼¶Á÷³Ì
+
+```
+  APP ¶Ë                          Bootloader ¶Ë
+  ©¤©¤©¤©¤©¤                           ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+  ¢Ù ½ÓÊÕ¹Ì¼þ°ü£¬Ð´Èë GD25Q40E
+  ¢Ú ¹¹Ôì OTA_Header Ð´ÈëµØÖ· 0
+  ¢Û EEPROM ÖÃ boot_flag  ©¤©¤©¤©¤©¤©¤¡ú  ¢Ü ÖØÆôºó¼ì²âµ½ boot_flag
+                                   ¢Ý ´ÓÍâ²¿ Flash ¶ÁÈ¡ OTA_Header
+                                   ¢Þ Öð¶Î°áÔË: Íâ²¿ Flash ¡ú ÄÚ²¿ Flash
+                                   ¢ß Çå³ý boot_flag£¬»ØÐ´ EEPROM
+                                   ¢à Ìø×ª APP
+```
+
+## CLI ÃüÁî
+
+ÉÏµçºó 2 ÃëÄÚÍ¨¹ý´®¿Ú·¢ËÍ `w` ½øÈëÃüÁîÐÐ£º
+
+| °´¼ü | ¹¦ÄÜ |
+|------|------|
+| `1` | ²Á³ý APP Çø Flash (Sector 4-11) |
+| `2` | ´®¿Ú Ymodem IAP ÏÂÔØ |
+| `3` | ÉèÖÃ OTA °æ±¾ºÅ |
+| `4` | ²éÑ¯ OTA °æ±¾ºÅ |
+| `5` | ÄÚ²¿ Flash ¡ú Íâ²¿ Flash£¨±¸·Ý£© |
+| `6` | Íâ²¿ Flash ¡ú ÄÚ²¿ Flash£¨»Ö¸´£© |
+| `7` | Èí¼þ¸´Î» |
+| `8` | ´òÓ¡ APP ÏòÁ¿±íÇ° 32 ×Ö½Ú |
+| `h` | ÏÔÊ¾°ïÖú |
+
+## ¹¹½¨ & ÉÕÂ¼
+
+### »·¾³ÒªÇó
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS / Linux)
+- [J-Link Software](https://www.segger.com/downloads/jlink/)£¨ÉÕÂ¼ & µ÷ÊÔ£©
+
+### 1. ¹¹½¨ Docker ¾µÏñ£¨½öÊ×´Î£©
+
+½« `gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2` ·ÅÔÚÏîÄ¿¸ùÄ¿Â¼£º
+
+```powershell
+docker build -t gd32-env .
+```
+
+### 2. ±àÒë¹Ì¼þ
+
+```powershell
+# CMake ÅäÖÃ£¨½öÊ×´Î / CMakeLists.txt ±ä¸üºó£©
+docker run --rm -v "${PWD}:/app" gd32-env cmake -BOutput -GNinja
+
+# ±àÒë
+docker run --rm -v "${PWD}:/app" gd32-env ninja -C Output
+```
+
+±àÒë²úÎïÎ»ÓÚ `Output/`£º
+
+| ÎÄ¼þ | ÓÃÍ¾ |
+|------|------|
+| `GDf4_boot.elf` | µ÷ÊÔÓÃ£¬º¬ÍêÕû·ûºÅ |
+| `GDf4_boot.hex` | J-Link ÉÕÂ¼ÓÃ |
+| `GDf4_boot.bin` | Ô­Ê¼¶þ½øÖÆ |
+| `GDf4_boot.map` | ÄÚ´æÓ³Éä |
+
+### 3. ÉÕÂ¼
+
+```powershell
+.\flash.bat
+```
+
+### VS Code ¿ì½ÝÈÎÎñ
+
+| ÈÎÎñ | ËµÃ÷ |
+|------|------|
+| •0‹4 **Ò»¼ü¹¹½¨ÉÕÂ¼** | ±àÒë + J-Link ÉÕÂ¼£¨`Ctrl+Shift+B`£© |
+| ”9ã4 **ÍêÕûÖØ½¨ÉÕÂ¼** | CMake ÅäÖÃ ¡ú ±àÒë ¡ú ÉÕÂ¼ |
+| **Clean Output** | ÇåÀí±àÒë²úÎï |
+
+### µ÷ÊÔ
+
+- **VS Code**: °´ `F5` Æô¶¯ Cortex-Debug (J-Link SWD)
+- **SEGGER Ozone**: ´ò¿ª `GDf4_boot.jdebug`£¨ÒÑÅäÖÃ Docker `/app` ¡ú ±¾µØÂ·¾¶Ó³Éä£©
+
+## Òý½ÅÅäÖÃ
+
+| ÍâÉè | Òý½Å | ¸´ÓÃ |
+|------|------|------|
+| USART0 TX | PA9 | AF7 |
+| USART0 RX | PA10 | AF7 |
+| SPI1 CS | PB12 | GPIO |
+| SPI1 SCK | PB13 | AF5 |
+| SPI1 MISO | PB14 | AF5 |
+| SPI1 MOSI | PB15 | AF5 |
+| I2C (Èí¼þ) | ¡ª | GPIO Ä£Äâ |
+
+## Ä¿Â¼½á¹¹
+
 ```
 GDf4_boot/
-â”‚
-â”œâ”€â”€ Project/           # Keil MDK project files
-â”‚   â”œâ”€â”€ Boot.uvprojx  # Keil Î¼Vision project
-â”‚   â””â”€â”€ Boot.uvoptx   # Project options
-â”‚
-â”œâ”€â”€ User/             # Application layer
-â”‚   â”œâ”€â”€ main.c        # Main application entry point
-â”‚   â”œâ”€â”€ main.h        # Main header file
-â”‚   â””â”€â”€ RTE_Components.h
-â”‚
-â”œâ”€â”€ Driver/           # Hardware drivers and libraries
-â”‚   â”œâ”€â”€ BSP/          # Board Support Package
-â”‚   â”‚   â”œâ”€â”€ Source/   # Driver implementations
-â”‚   â”‚   â”‚   â”œâ”€â”€ usart.c      # USART driver
-â”‚   â”‚   â”‚   â”œâ”€â”€ spi.c        # SPI driver
-â”‚   â”‚   â”‚   â”œâ”€â”€ iic.c        # I2C driver
-â”‚   â”‚   â”‚   â”œâ”€â”€ gd25q40e.c   # SPI Flash driver
-â”‚   â”‚   â”‚   â”œâ”€â”€ AT24c02.c    # I2C EEPROM driver
-â”‚   â”‚   â”‚   â””â”€â”€ fmc.c        # Flash Memory Controller
-â”‚   â”‚   â””â”€â”€ Include/  # Driver headers
-â”‚   â”‚
-â”‚   â”œâ”€â”€ LIB/          # GD32F4xx Standard Peripheral Library
-â”‚   â”‚   â”œâ”€â”€ Source/   # Library source files
-â”‚   â”‚   â””â”€â”€ Include/  # Library headers
-â”‚   â”‚
-â”‚   â”œâ”€â”€ CMSIS/        # ARM CMSIS (Cortex Microcontroller Software Interface Standard)
-â”‚   â”‚   â”œâ”€â”€ Source/   # CMSIS implementations
-â”‚   â”‚   â””â”€â”€ Include/  # CMSIS headers (gd32f4xx.h, system_gd32f4xx.h, core_cm4.h)
-â”‚   â”‚
-â”‚   â””â”€â”€ SYSTEM/       # System-level drivers
-â”‚       â”œâ”€â”€ Source/   # System implementations (systick.c, delay.c, interrupt handlers)
-â”‚       â””â”€â”€ Include/  # System headers
-â”‚
-â””â”€â”€ README.md         # This file
+©À©¤©¤ CMakeLists.txt              # CMake ¹¹½¨½Å±¾
+©À©¤©¤ Dockerfile                  # Docker ½»²æ±àÒë»·¾³
+©À©¤©¤ flash.bat                   # J-Link Ò»¼üÉÕÂ¼½Å±¾
+©À©¤©¤ GDf4_boot.jdebug            # SEGGER Ozone µ÷ÊÔ¹¤³Ì
+©¦
+©À©¤©¤ User/                       # Ó¦ÓÃ²ã
+©¦   ©À©¤©¤ main.c                  # Èë¿Ú: ³õÊ¼»¯ ¡ú bootloader_branch()
+©¦   ©¸©¤©¤ main.h                  # Flash ·ÖÇøºê (APP_ADDR µÈ)
+©¦
+©À©¤©¤ Driver/
+©¦   ©À©¤©¤ BSP/                    # °å¼¶Çý¶¯ (Board Support Package)
+©¦   ©¦   ©À©¤©¤ Source/
+©¦   ©¦   ©¦   ©À©¤©¤ boot.c          # ¡ï Bootloader ºËÐÄ (CLI / Ymodem / OTA / Ìø×ª)
+©¦   ©¦   ©¦   ©À©¤©¤ usart.c         # USART0 (DMA ½ÓÊÕ + »·ÐÎ»º³å)
+©¦   ©¦   ©¦   ©À©¤©¤ spi.c           # SPI1 Çý¶¯
+©¦   ©¦   ©¦   ©À©¤©¤ iic.c           # Èí¼þ I2C
+©¦   ©¦   ©¦   ©À©¤©¤ gd25q40e.c      # GD25Q40E SPI Flash
+©¦   ©¦   ©¦   ©À©¤©¤ AT24c256.c      # AT24C256 EEPROM
+©¦   ©¦   ©¦   ©¸©¤©¤ fmc.c           # ÄÚ²¿ Flash ²ÁÐ´
+©¦   ©¦   ©¸©¤©¤ Include/
+©¦   ©¦
+©¦   ©À©¤©¤ CMSIS/                  # ARM CMSIS + GD32F4xx Ð¾Æ¬Í·ÎÄ¼þ
+©¦   ©À©¤©¤ LIB/                    # GD32F4xx ±ê×¼ÍâÉè¿â V3.3.2
+©¦   ©¸©¤©¤ SYSTEM/                 # SysTick / DWT ÑÓÊ± / ÖÐ¶Ï´¦Àí
+©¦
+©À©¤©¤ Project/
+©¦   ©À©¤©¤ gd32f470xE_flash.ld     # Á´½Ó½Å±¾ (1024K Flash / 192K RAM)
+©¦   ©¸©¤©¤ startup_gd32f450_470.S  # Æô¶¯»ã±à
+©¦
+©¸©¤©¤ Output/                     # ±àÒë²úÎï (Docker Éú³É)
 ```
 
-## Building the Project
+## ¼¼ÊõÒªµã
 
-### Prerequisites
-- **Keil MDK-ARM** (Î¼Vision 5.06 or later)
-- **ARM Compiler 5** or **ARM Compiler 6**
-- **GD32F4xx Device Family Pack** installed in Keil
+- **ÑÓÊ±**: `delay_us()` »ùÓÚ DWT ÖÜÆÚ¼ÆÊýÆ÷ (²»Õ¼ SysTick)£»`delay_ms()` / `delay_1ms()` »ùÓÚ SysTick 1 kHz ÖÐ¶Ï
+- **´®¿Ú½ÓÊÕ**: USART0 DMA + ¿ÕÏÐÖÐ¶Ï£¬Êý¾Ý´æÈë»·ÐÎ»º³åÇø£¬Áã¿½±´½âÎö
+- **Ìø×ª°²È«**: ¹ØÖÐ¶Ï ¡ú Í£ SysTick ¡ú Çå NVIC ¡ú Ë¢ Cache ¡ú deinit ÍâÉè ¡ú Éè VTOR ¡ú Éè MSP ¡ú Ìø×ª
+- **±àÒëÓÅ»¯**: `-O2 -ffunction-sections -fdata-sections` + `--gc-sections` ²Ã¼ôÎ´ÓÃ´úÂë
 
-### Build Steps
-1. Open `Project/Boot.uvprojx` in Keil Î¼Vision
-2. Select the target configuration (Target 1)
-3. Build the project: **Project â†’ Build Target** (or press F7)
-4. The output files (HEX/BIN) will be generated in the build output directory
+## Ðí¿ÉÖ¤
 
-### Flash Programming
-1. Connect your debugger (J-Link, ST-Link, or compatible)
-2. In Keil Î¼Vision: **Flash â†’ Download** (or press F8)
-3. The firmware will be programmed to the GD32F4xx MCU
-
-## Usage
-
-### Serial Communication
-Connect a USB-to-Serial adapter to USART0:
-- **TX**: PA9
-- **RX**: PA10
-- **Baud Rate**: 921600
-- **Data Format**: 8N1
-
-Use a serial terminal (like PuTTY, TeraTerm, or screen) to view debug output:
-```bash
-screen /dev/ttyUSB0 921600
-```
-
-### Main Application Functions
-The main application in `User/main.c` demonstrates:
-- USART initialization and printf debugging
-- SPI Flash operations (erase, write, read)
-- I2C EEPROM operations
-- Internal Flash memory operations
-
-### SPI Flash Operations (GD25Q40E)
-```c
-// Erase 64KB block
-gd25_erase64k(0);
-
-// Write page (256 bytes)
-uint8_t buf[256] = {0};
-gd25_pagewrite(buf, page_num);
-
-// Read data
-uint8_t bufrecv[256] = {0};
-gd25_read(bufrecv, address, length);
-```
-
-### Internal Flash Operations
-```c
-// Note: Sectors 0-3 contain program code (DO NOT ERASE!)
-// Use Sector 4 or higher for data storage
-
-// Erase sector 4 (starts at 0x08010000)
-gd32_eraseflash(4, 1);
-
-// Write data (256 words = 1KB)
-uint32_t wbuf[256];
-gd32_writeflash(0x08010000, wbuf, 256);
-
-// Read data
-uint32_t value = gd32_readflash(0x08010000);
-```
-
-## Peripheral Pins Configuration
-
-### USART0
-- **TX**: PA9 (AF7)
-- **RX**: PA10 (AF7)
-
-### SPI1 (for GD25Q40E Flash)
-- **CS**: PB12 (GPIO)
-- **SCK**: PB13 (AF5)
-- **MISO**: PB14 (AF5)
-- **MOSI**: PB15 (AF5)
-
-### I2C (for AT24C02 EEPROM)
-- Configured via I2C peripheral driver
-
-## Development Notes
-- The project uses GigaDevice's GD32F4xx Standard Peripheral Library (V3.3.2)
-- Based on ARM CMSIS standard for portability
-- Flash sectors 0-3 (16KB each) are reserved for program code
-- Sector 4 (64KB, starting at 0x08010000) and above can be used for data storage
-
-## License
-This project contains code with the following licenses:
-- **GigaDevice SDK**: BSD 3-Clause License (Copyright Â© 2025, GigaDevice Semiconductor Inc.)
-- **Application Code**: Check individual source files for specific license information
-
-See individual source files for detailed copyright and license information.
+- **GigaDevice SDK**: BSD 3-Clause (Copyright 0„8 2025, GigaDevice Semiconductor Inc.)
+- **Ó¦ÓÃ´úÂë**: Ïê¼û¸÷Ô´ÎÄ¼þÍ·²¿

@@ -42,3 +42,21 @@ RTE/
 # Temporary files
 *.tmp
 *~
+
+# Large toolchain archives (Docker build only, do not push)
+*.tar.bz2
+*.tar.gz
+*.tar.xz
+
+# Docker build context (already in Docker image)
+gcc-arm-none-eabi-*/
+
+# Build output
+build/
+Output/
+
+# Visual Studio / Debug artifacts
+*.pdb
+*.exe
+*.log
+*.log.lock

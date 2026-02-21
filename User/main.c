@@ -41,84 +41,32 @@ OF SUCH DAMAGE.
 int main(void){
 	usart0_init(921600);
 	u0_printf("%d %c %x",0x30,0x30,0x30);
-    delay_init();
+	systick_config();    // ÏÈÅäÖÃ SysTick 1kHz ÖĞ¶Ï£¬delay_1ms/delay_ms ÒÀÀµËü
+	delay_init();        // ³õÊ¼»¯ DWT ÖÜÆÚ¼ÆÊıÆ÷£¬delay_us ÒÀÀµËü£¨²»ÔÙÕ¼ÓÃ SysTick£©
 	iic_init();
 	gd25q40e_init();
 	
-	// æµ‹è¯•OTA flagå†™å…¥
-	u0_printf("====== Testing OTA Flag ======\r\n");
-	
-	// å…ˆæ¸…ç©ºEEPROMåœ°å€0çš„æ•°æ®
-	u0_printf("Clearing EEPROM at address 0...\r\n");
-	OTA_InfoCB clear_ota = {0};
-	uint8_t ret = AT24_write_page(0, (uint8_t *)&clear_ota, OTA_INFO_SIZE);
-	if(ret != 0){
-		u0_printf("Clear failed, error: %d\r\n", ret);
-	}
-	delay_ms(100);
-	
-	// æ„é€ OTAä¿¡æ¯ç»“æ„
-	OTA_InfoCB test_ota = {0};  // æ˜ç¡®åˆå§‹åŒ–ä¸º0
-	test_ota.boot_flag = BOOT_FLAG_SET;    // è®¾ç½®bootloader flag
-	test_ota.app_addr = 0x08020000;        // è®¾ç½®åº”ç”¨åœ°å€
-	
-	u0_printf("Before write - boot_flag: 0x%x, app_addr: 0x%x\r\n", test_ota.boot_flag, test_ota.app_addr);
-	
-	// æ‰“å°ç»“æ„ä½“çš„å®é™…å­—èŠ‚
-	u0_printf("test_ota bytes to write:\r\n");
-	uint8_t *ptr = (uint8_t *)&test_ota;
-	for(int i = 0; i < 8; i++){
-		u0_printf("[%d]=0x%02x ", i, ptr[i]);
-	}
-	u0_printf("\r\n");
-	
-	// å•ç‹¬æµ‹è¯•å†™ä¸€ä¸ªå­—èŠ‚
-	u0_printf("Testing single byte write at address 100...\r\n");
-	uint8_t test_byte = 0xAB;
-	ret = AT24_write_page(100, &test_byte, 1);
-	u0_printf("Single byte write result: %d\r\n", ret);
-	delay_ms(50);
-	uint8_t read_test = 0;
-	AT24_read_page(100, &read_test, 1);
-	u0_printf("Read back: 0x%02x\r\n", read_test);
-	
-	// å°†OTAä¿¡æ¯å†™å…¥EEPROMåœ°å€0
-	u0_printf("Writing full OTA structure to EEPROM...\r\n");
-	ret = AT24_write_page(0, (uint8_t *)&test_ota, OTA_INFO_SIZE);
-	if(ret != 0){
-		u0_printf("Write OTA failed, error: %d\r\n", ret);
-	}else{
-		u0_printf("Write OTA success\r\n");
-	}
-	
-	delay_ms(100);
-	
-	// è¯»å–åŸå§‹å­—èŠ‚æ•°æ®è¿›è¡Œè°ƒè¯•
-	u0_printf("Raw bytes at address 0:\r\n");
-	uint8_t raw_bytes[8] = {0};
-	AT24_read_page(0, raw_bytes, 8);
-	for(int i = 0; i < 8; i++){
-		u0_printf("[%d]=0x%02x ", i, raw_bytes[i]);
-	}
-	u0_printf("\r\n");
-	
-	// é‡æ–°è¯»å–OTAä¿¡æ¯åˆ°ota_infoå…¨å±€å˜é‡
-	u0_printf("Reading OTA flag from EEPROM...\r\n");
 	AT24_ReadOTAInfo();
-	
-	u0_printf("OTA flag value: 0x%x\r\n", ota_info.boot_flag);
-	u0_printf("OTA app_addr: 0x%x\r\n", ota_info.app_addr);
-	
-	// æ£€æŸ¥boot branch
-	u0_printf("Checking bootloader branch...\r\n");
-    bootloader_branch();
+	bootloader_branch();
 
 
+ 
 	while(1) 
     {
+
+        
+        if(u0_ucb.out!=u0_ucb.in){  // ÓĞÊı¾İ
+             // ´¦ÀíÊı¾İ
+             u0_printf("CMD: 0x%02X, len=%d\r\n", u0_ucb.out->st[0], u0_ucb.out->ed - u0_ucb.out->st + 1);
+             bootloader_cli_event(u0_ucb.out->st,u0_ucb.out->ed-u0_ucb.out->st+1);
+             u0_ucb.out++;
+
+            if(u0_ucb.out > u0_ucb.end){  // > ¶ø·Ç >=£¬ÈÃ×îºóÒ»¸ö²ÛÎ»¿ÉÓÃ
+                    u0_ucb.out=&u0_ucb.uart_infro_buf[0];
+            }
+        }
     }
 }
-	
 
 
 

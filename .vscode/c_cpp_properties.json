@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "GD32F470",
+            "includePath": [
+                "${workspaceFolder}/User",
+                "${workspaceFolder}/Driver/CMSIS/Include",
+                "${workspaceFolder}/Driver/SYSTEM/Include",
+                "${workspaceFolder}/Driver/BSP/Include",
+                "${workspaceFolder}/Driver/LIB/Include"
+            ],
+            "defines": [
+                "GD32F470",
+                "USE_STDPERIPH_DRIVER",
+                "__GNUC__"
+            ],
+            "compilerPath": "D:/software/x86_64-15.1.0-release-win32-seh-msvcrt-rt_v12-rev0/mingw64/bin/gcc.exe",
+            "cStandard": "c11",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

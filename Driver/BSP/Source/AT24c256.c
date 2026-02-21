@@ -70,7 +70,12 @@ void AT24_ReadOTAInfo(void){
 }
 
 
-//11
+//存储OTA信息到AT24C256
+void AT24_WriteOTAInfo(void){
+
+	AT24_write_page(0,(uint8_t *)&ota_info,OTA_INFO_SIZE);//将ota_info结构体写入到地址0
+
+}
 
 
 

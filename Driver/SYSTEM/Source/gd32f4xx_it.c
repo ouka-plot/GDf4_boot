@@ -51,26 +51,29 @@ void USART0_IRQHandler(void){
 	 if(usart_interrupt_flag_get(USART0,USART_INT_FLAG_IDLE)==1){
 		//usart_interrupt_flag_clear(USART0,USART_INT_FLAG_IDLE);
 		
-        volatile uint32_t tmp = USART_STAT0(USART0); 
-        tmp = USART_DATA(USART0); // 读数据寄存器清标志
+        // 读 STAT0 和 DATA 寄存器清除 IDLE 标志位（硬件要求）
+        (void)USART_STAT0(USART0);
+        (void)USART_DATA(USART0);
 		 
 		uint32_t count=  (rx_max+1)-dma_transfer_number_get(DMA1,DMA_CH2);  //因为最开始设置number 为rx_max+1
-		u0_ucb.totol_date+=count;
-		u0_ucb.in->ed=&uart_rxbuf[u0_ucb.totol_date-1];//(u0_ucb.in->st)+count-1;
-		u0_ucb.in++;
-		if( u0_ucb.in == u0_ucb.end){
-				  u0_ucb.in=&u0_ucb.uart_infro_buf[0];
-			 
-			 }
-		 
-		if(rx_bufmax-u0_ucb.totol_date<rx_max){
-					 u0_ucb.in->st=uart_rxbuf;
-					
-				     u0_ucb.totol_date=0;
-			 }
-		else{
-			  u0_ucb.in->st=&uart_rxbuf[u0_ucb.totol_date];
 		
+		if(count > 0){  // 有数据才处理
+			u0_ucb.totol_date+=count;
+			u0_ucb.in->ed=&uart_rxbuf[u0_ucb.totol_date-1];
+			u0_ucb.in++;
+			if( u0_ucb.in > u0_ucb.end){  // > 而非 >=，让最后一个槽位可用
+					  u0_ucb.in=&u0_ucb.uart_infro_buf[0];
+				 }
+			 
+			if(rx_bufmax-u0_ucb.totol_date<rx_max){
+						 u0_ucb.in->st=uart_rxbuf;
+						
+					     u0_ucb.totol_date=0;
+				 }
+			else{
+				  u0_ucb.in->st=&uart_rxbuf[u0_ucb.totol_date];
+			
+			}
 		}
 
 	//重开dma
@@ -206,5 +209,5 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
 //    led_spark();
-//    delay_decrement();
+    delay_decrement();
 }

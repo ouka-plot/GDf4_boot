@@ -23,7 +23,7 @@ uint8_t uart_rxbuf[rx_bufmax];
 uint8_t uart_txbuf[tx_bufmax];
 
 uart_rxbuff_ptr u0_rxbuff_ptr;
-uart_ucb u0_ucb;
+volatile uart_ucb u0_ucb;
 
 /*
 
