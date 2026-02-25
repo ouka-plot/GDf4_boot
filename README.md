@@ -1,131 +1,131 @@
-# GDf4_boot ¡ª GD32F470 Bootloader
+# GDf4_boot â€” GD32F470 Bootloader
 
-»ùÓÚ **GD32F470** (Cortex-M4F @ 240 MHz) µÄ´®¿Ú IAP + OTA Bootloader£¬Ê¹ÓÃ Docker ÈÝÆ÷»¯½»²æ±àÒë¡£
+åŸºäºŽ **GD32F470** (Cortex-M4F @ 240 MHz) çš„ä¸²å£ IAP + OTA Bootloaderï¼Œä½¿ç”¨ Docker å®¹å™¨åŒ–äº¤å‰ç¼–è¯‘ã€‚
 
-## ¹¦ÄÜÌØÐÔ
+## åŠŸèƒ½ç‰¹æ€§
 
-| ¹¦ÄÜ | ËµÃ÷ |
+| åŠŸèƒ½ | è¯´æ˜Ž |
 |------|------|
-| **´®¿Ú IAP** | USART0 + Ymodem Ð­Òé£¬½«¹Ì¼þÖ±½ÓÉÕÐ´µ½ÄÚ²¿ Flash APP Çø |
-| **OTA Éý¼¶** | APP ½«¹Ì¼þ°ü´æÈëÍâ²¿ SPI Flash ¡ú ÉèÖÃ EEPROM ±êÖ¾ ¡ú ÖØÆôºó Bootloader ×Ô¶¯°áÔË |
-| **±¸·Ý / »Ö¸´** | ÄÚ²¿ Flash APP Çø 6Ç2 Íâ²¿ SPI Flash Ë«Ïò°áÔË |
-| **´®¿Ú CLI** | ÉÏµç 2 s ÄÚ°´ `w` ½øÈëÃüÁîÐÐ£¬Ö§³Ö²Á³ý¡¢ÏÂÔØ¡¢±¸·Ý¡¢»Ö¸´¡¢²éÑ¯µÈ |
-| **°²È«Ìø×ª** | MSP Ð£Ñé ¡ú NVIC ÇåÀí ¡ú I/D-Cache Ë¢ÐÂ ¡ú ·´³õÊ¼»¯ÍâÉè ¡ú Ìø×ª APP |
+| **ä¸²å£ IAP** | USART0 + Ymodem åè®®ï¼Œå°†å›ºä»¶ç›´æŽ¥çƒ§å†™åˆ°å†…éƒ¨ Flash APP åŒº |
+| **OTA å‡çº§** | APP å°†å›ºä»¶åŒ…å­˜å…¥å¤–éƒ¨ SPI Flash â†’ è®¾ç½® EEPROM æ ‡å¿— â†’ é‡å¯åŽ Bootloader è‡ªåŠ¨æ¬è¿ |
+| **å¤‡ä»½ / æ¢å¤** | å†…éƒ¨ Flash APP åŒº â†” å¤–éƒ¨ SPI Flash åŒå‘æ¬è¿ |
+| **ä¸²å£ CLI** | ä¸Šç”µ 2 s å†…æŒ‰ `w` è¿›å…¥å‘½ä»¤è¡Œï¼Œæ”¯æŒæ“¦é™¤ã€ä¸‹è½½ã€å¤‡ä»½ã€æ¢å¤ã€æŸ¥è¯¢ç­‰ |
+| **å®‰å…¨è·³è½¬** | MSP æ ¡éªŒ â†’ NVIC æ¸…ç† â†’ I/D-Cache åˆ·æ–° â†’ ååˆå§‹åŒ–å¤–è®¾ â†’ è·³è½¬ APP |
 
-## Ó²¼þÆ½Ì¨
+## ç¡¬ä»¶å¹³å°
 
-| ×é¼þ | ÐÍºÅ / ²ÎÊý |
+| ç»„ä»¶ | åž‹å· / å‚æ•° |
 |------|-------------|
-| MCU | GD32F470VG ¡ª Cortex-M4F, 1024 KB Flash (Bank0), 192 KB SRAM + 64 KB TCMRAM |
-| Íâ²¿ Flash | GD25Q40E ¡ª 4 Mbit SPI Flash£¨´æ´¢ OTA ¹Ì¼þ°ü£© |
-| EEPROM | AT24C256 ¡ª 256 Kbit I2C EEPROM£¨´æ´¢ OTA Éý¼¶±êÖ¾£© |
-| µ÷ÊÔÆ÷ | J-Link (SWD) |
-| ´®¿Ú | USART0 ¡ª PA9(TX) / PA10(RX)£¬921600 baud£¬8N1 |
+| MCU | GD32F470VG â€” Cortex-M4F, 1024 KB Flash (Bank0), 192 KB SRAM + 64 KB TCMRAM |
+| å¤–éƒ¨ Flash | GD25Q40E â€” 4 Mbit SPI Flashï¼ˆå­˜å‚¨ OTA å›ºä»¶åŒ…ï¼‰ |
+| EEPROM | AT24C256 â€” 256 Kbit I2C EEPROMï¼ˆå­˜å‚¨ OTA å‡çº§æ ‡å¿—ï¼‰ |
+| è°ƒè¯•å™¨ | J-Link (SWD) |
+| ä¸²å£ | USART0 â€” PA9(TX) / PA10(RX)ï¼Œ921600 baudï¼Œ8N1 |
 
-## Flash ·ÖÇø
-
-```
-  0x08000000 ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
-             ©¦  Bootloader (64 KB)    ©¦  Sector 0-3  (16 KB ¡Á 4)
-  0x08010000 ©À©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©È
-             ©¦                        ©¦  Sector 4    (64 KB)
-             ©¦    APP Çø (960 KB)     ©¦  Sector 5-11 (128 KB ¡Á 7)
-  0x08100000 ©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
-
-  Íâ²¿ SPI Flash (GD25Q40E, 512 KB):
-  0x00000000 ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
-             ©¦  OTA Header (144 B)    ©¦  magic + ¶ÎÃèÊö
-             ©À©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©È
-             ©¦  ¹Ì¼þÊý¾Ý              ©¦  °´¶Î´æ·Å
-             ©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
-```
-
-## OTA Éý¼¶Á÷³Ì
+## Flash åˆ†åŒº
 
 ```
-  APP ¶Ë                          Bootloader ¶Ë
-  ©¤©¤©¤©¤©¤                           ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
-  ¢Ù ½ÓÊÕ¹Ì¼þ°ü£¬Ð´Èë GD25Q40E
-  ¢Ú ¹¹Ôì OTA_Header Ð´ÈëµØÖ· 0
-  ¢Û EEPROM ÖÃ boot_flag  ©¤©¤©¤©¤©¤©¤¡ú  ¢Ü ÖØÆôºó¼ì²âµ½ boot_flag
-                                   ¢Ý ´ÓÍâ²¿ Flash ¶ÁÈ¡ OTA_Header
-                                   ¢Þ Öð¶Î°áÔË: Íâ²¿ Flash ¡ú ÄÚ²¿ Flash
-                                   ¢ß Çå³ý boot_flag£¬»ØÐ´ EEPROM
-                                   ¢à Ìø×ª APP
+  0x08000000 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+             â”‚  Bootloader (64 KB)    â”‚  Sector 0-3  (16 KB Ã— 4)
+  0x08010000 â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+             â”‚                        â”‚  Sector 4    (64 KB)
+             â”‚    APP åŒº (960 KB)     â”‚  Sector 5-11 (128 KB Ã— 7)
+  0x08100000 â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+
+  å¤–éƒ¨ SPI Flash (GD25Q40E, 512 KB):
+  0x00000000 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+             â”‚  OTA Header (144 B)    â”‚  magic + æ®µæè¿°
+             â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
+             â”‚  å›ºä»¶æ•°æ®              â”‚  æŒ‰æ®µå­˜æ”¾
+             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
-## CLI ÃüÁî
+## OTA å‡çº§æµç¨‹
 
-ÉÏµçºó 2 ÃëÄÚÍ¨¹ý´®¿Ú·¢ËÍ `w` ½øÈëÃüÁîÐÐ£º
+```
+  APP ç«¯                          Bootloader ç«¯
+  â”€â”€â”€â”€â”€                           â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  â‘  æŽ¥æ”¶å›ºä»¶åŒ…ï¼Œå†™å…¥ GD25Q40E
+  â‘¡ æž„é€  OTA_Header å†™å…¥åœ°å€ 0
+  â‘¢ EEPROM ç½® boot_flag  â”€â”€â”€â”€â”€â”€â†’  â‘£ é‡å¯åŽæ£€æµ‹åˆ° boot_flag
+                                   â‘¤ ä»Žå¤–éƒ¨ Flash è¯»å– OTA_Header
+                                   â‘¥ é€æ®µæ¬è¿: å¤–éƒ¨ Flash â†’ å†…éƒ¨ Flash
+                                   â‘¦ æ¸…é™¤ boot_flagï¼Œå›žå†™ EEPROM
+                                   â‘§ è·³è½¬ APP
+```
 
-| °´¼ü | ¹¦ÄÜ |
+## CLI å‘½ä»¤
+
+ä¸Šç”µåŽ 2 ç§’å†…é€šè¿‡ä¸²å£å‘é€ `w` è¿›å…¥å‘½ä»¤è¡Œï¼š
+
+| æŒ‰é”® | åŠŸèƒ½ |
 |------|------|
-| `1` | ²Á³ý APP Çø Flash (Sector 4-11) |
-| `2` | ´®¿Ú Ymodem IAP ÏÂÔØ |
-| `3` | ÉèÖÃ OTA °æ±¾ºÅ |
-| `4` | ²éÑ¯ OTA °æ±¾ºÅ |
-| `5` | ÄÚ²¿ Flash ¡ú Íâ²¿ Flash£¨±¸·Ý£© |
-| `6` | Íâ²¿ Flash ¡ú ÄÚ²¿ Flash£¨»Ö¸´£© |
-| `7` | Èí¼þ¸´Î» |
-| `8` | ´òÓ¡ APP ÏòÁ¿±íÇ° 32 ×Ö½Ú |
-| `h` | ÏÔÊ¾°ïÖú |
+| `1` | æ“¦é™¤ APP åŒº Flash (Sector 4-11) |
+| `2` | ä¸²å£ Ymodem IAP ä¸‹è½½ |
+| `3` | è®¾ç½® OTA ç‰ˆæœ¬å· |
+| `4` | æŸ¥è¯¢ OTA ç‰ˆæœ¬å· |
+| `5` | å†…éƒ¨ Flash â†’ å¤–éƒ¨ Flashï¼ˆå¤‡ä»½ï¼‰ |
+| `6` | å¤–éƒ¨ Flash â†’ å†…éƒ¨ Flashï¼ˆæ¢å¤ï¼‰ |
+| `7` | è½¯ä»¶å¤ä½ |
+| `8` | æ‰“å° APP å‘é‡è¡¨å‰ 32 å­—èŠ‚ |
+| `h` | æ˜¾ç¤ºå¸®åŠ© |
 
-## ¹¹½¨ & ÉÕÂ¼
+## æž„å»º & çƒ§å½•
 
-### »·¾³ÒªÇó
+### çŽ¯å¢ƒè¦æ±‚
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS / Linux)
-- [J-Link Software](https://www.segger.com/downloads/jlink/)£¨ÉÕÂ¼ & µ÷ÊÔ£©
+- [J-Link Software](https://www.segger.com/downloads/jlink/)ï¼ˆçƒ§å½• & è°ƒè¯•ï¼‰
 
-### 1. ¹¹½¨ Docker ¾µÏñ£¨½öÊ×´Î£©
+### 1. æž„å»º Docker é•œåƒï¼ˆä»…é¦–æ¬¡ï¼‰
 
-½« `gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2` ·ÅÔÚÏîÄ¿¸ùÄ¿Â¼£º
+å°† `gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2` æ”¾åœ¨é¡¹ç›®æ ¹ç›®å½•ï¼š
 
 ```powershell
 docker build -t gd32-env .
 ```
 
-### 2. ±àÒë¹Ì¼þ
+### 2. ç¼–è¯‘å›ºä»¶
 
 ```powershell
-# CMake ÅäÖÃ£¨½öÊ×´Î / CMakeLists.txt ±ä¸üºó£©
+# CMake é…ç½®ï¼ˆä»…é¦–æ¬¡ / CMakeLists.txt å˜æ›´åŽï¼‰
 docker run --rm -v "${PWD}:/app" gd32-env cmake -BOutput -GNinja
 
-# ±àÒë
+# ç¼–è¯‘
 docker run --rm -v "${PWD}:/app" gd32-env ninja -C Output
 ```
 
-±àÒë²úÎïÎ»ÓÚ `Output/`£º
+ç¼–è¯‘äº§ç‰©ä½äºŽ `Output/`ï¼š
 
-| ÎÄ¼þ | ÓÃÍ¾ |
+| æ–‡ä»¶ | ç”¨é€” |
 |------|------|
-| `GDf4_boot.elf` | µ÷ÊÔÓÃ£¬º¬ÍêÕû·ûºÅ |
-| `GDf4_boot.hex` | J-Link ÉÕÂ¼ÓÃ |
-| `GDf4_boot.bin` | Ô­Ê¼¶þ½øÖÆ |
-| `GDf4_boot.map` | ÄÚ´æÓ³Éä |
+| `GDf4_boot.elf` | è°ƒè¯•ç”¨ï¼Œå«å®Œæ•´ç¬¦å· |
+| `GDf4_boot.hex` | J-Link çƒ§å½•ç”¨ |
+| `GDf4_boot.bin` | åŽŸå§‹äºŒè¿›åˆ¶ |
+| `GDf4_boot.map` | å†…å­˜æ˜ å°„ |
 
-### 3. ÉÕÂ¼
+### 3. çƒ§å½•
 
 ```powershell
 .\flash.bat
 ```
 
-### VS Code ¿ì½ÝÈÎÎñ
+### VS Code å¿«æ·ä»»åŠ¡
 
-| ÈÎÎñ | ËµÃ÷ |
+| ä»»åŠ¡ | è¯´æ˜Ž |
 |------|------|
-| •0‹4 **Ò»¼ü¹¹½¨ÉÕÂ¼** | ±àÒë + J-Link ÉÕÂ¼£¨`Ctrl+Shift+B`£© |
-| ”9ã4 **ÍêÕûÖØ½¨ÉÕÂ¼** | CMake ÅäÖÃ ¡ú ±àÒë ¡ú ÉÕÂ¼ |
-| **Clean Output** | ÇåÀí±àÒë²úÎï |
+|  **ä¸€é”®æž„å»ºçƒ§å½•** | ç¼–è¯‘ + J-Link çƒ§å½•ï¼ˆ`Ctrl+Shift+B`ï¼‰ |
+|  **å®Œæ•´é‡å»ºçƒ§å½•** | CMake é…ç½® â†’ ç¼–è¯‘ â†’ çƒ§å½• |
+| **Clean Output** | æ¸…ç†ç¼–è¯‘äº§ç‰© |
 
-### µ÷ÊÔ
+### è°ƒè¯•
 
-- **VS Code**: °´ `F5` Æô¶¯ Cortex-Debug (J-Link SWD)
-- **SEGGER Ozone**: ´ò¿ª `GDf4_boot.jdebug`£¨ÒÑÅäÖÃ Docker `/app` ¡ú ±¾µØÂ·¾¶Ó³Éä£©
+- **VS Code**: æŒ‰ `F5` å¯åŠ¨ Cortex-Debug (J-Link SWD)
+- **SEGGER Ozone**: æ‰“å¼€ `GDf4_boot.jdebug`ï¼ˆå·²é…ç½® Docker `/app` â†’ æœ¬åœ°è·¯å¾„æ˜ å°„ï¼‰
 
-## Òý½ÅÅäÖÃ
+## å¼•è„šé…ç½®
 
-| ÍâÉè | Òý½Å | ¸´ÓÃ |
+| å¤–è®¾ | å¼•è„š | å¤ç”¨ |
 |------|------|------|
 | USART0 TX | PA9 | AF7 |
 | USART0 RX | PA10 | AF7 |
@@ -133,52 +133,52 @@ docker run --rm -v "${PWD}:/app" gd32-env ninja -C Output
 | SPI1 SCK | PB13 | AF5 |
 | SPI1 MISO | PB14 | AF5 |
 | SPI1 MOSI | PB15 | AF5 |
-| I2C (Èí¼þ) | ¡ª | GPIO Ä£Äâ |
+| I2C (è½¯ä»¶) | â€” | GPIO æ¨¡æ‹Ÿ |
 
-## Ä¿Â¼½á¹¹
+## ç›®å½•ç»“æž„
 
 ```
 GDf4_boot/
-©À©¤©¤ CMakeLists.txt              # CMake ¹¹½¨½Å±¾
-©À©¤©¤ Dockerfile                  # Docker ½»²æ±àÒë»·¾³
-©À©¤©¤ flash.bat                   # J-Link Ò»¼üÉÕÂ¼½Å±¾
-©À©¤©¤ GDf4_boot.jdebug            # SEGGER Ozone µ÷ÊÔ¹¤³Ì
-©¦
-©À©¤©¤ User/                       # Ó¦ÓÃ²ã
-©¦   ©À©¤©¤ main.c                  # Èë¿Ú: ³õÊ¼»¯ ¡ú bootloader_branch()
-©¦   ©¸©¤©¤ main.h                  # Flash ·ÖÇøºê (APP_ADDR µÈ)
-©¦
-©À©¤©¤ Driver/
-©¦   ©À©¤©¤ BSP/                    # °å¼¶Çý¶¯ (Board Support Package)
-©¦   ©¦   ©À©¤©¤ Source/
-©¦   ©¦   ©¦   ©À©¤©¤ boot.c          # ¡ï Bootloader ºËÐÄ (CLI / Ymodem / OTA / Ìø×ª)
-©¦   ©¦   ©¦   ©À©¤©¤ usart.c         # USART0 (DMA ½ÓÊÕ + »·ÐÎ»º³å)
-©¦   ©¦   ©¦   ©À©¤©¤ spi.c           # SPI1 Çý¶¯
-©¦   ©¦   ©¦   ©À©¤©¤ iic.c           # Èí¼þ I2C
-©¦   ©¦   ©¦   ©À©¤©¤ gd25q40e.c      # GD25Q40E SPI Flash
-©¦   ©¦   ©¦   ©À©¤©¤ AT24c256.c      # AT24C256 EEPROM
-©¦   ©¦   ©¦   ©¸©¤©¤ fmc.c           # ÄÚ²¿ Flash ²ÁÐ´
-©¦   ©¦   ©¸©¤©¤ Include/
-©¦   ©¦
-©¦   ©À©¤©¤ CMSIS/                  # ARM CMSIS + GD32F4xx Ð¾Æ¬Í·ÎÄ¼þ
-©¦   ©À©¤©¤ LIB/                    # GD32F4xx ±ê×¼ÍâÉè¿â V3.3.2
-©¦   ©¸©¤©¤ SYSTEM/                 # SysTick / DWT ÑÓÊ± / ÖÐ¶Ï´¦Àí
-©¦
-©À©¤©¤ Project/
-©¦   ©À©¤©¤ gd32f470xE_flash.ld     # Á´½Ó½Å±¾ (1024K Flash / 192K RAM)
-©¦   ©¸©¤©¤ startup_gd32f450_470.S  # Æô¶¯»ã±à
-©¦
-©¸©¤©¤ Output/                     # ±àÒë²úÎï (Docker Éú³É)
+â”œâ”€â”€ CMakeLists.txt              # CMake æž„å»ºè„šæœ¬
+â”œâ”€â”€ Dockerfile                  # Docker äº¤å‰ç¼–è¯‘çŽ¯å¢ƒ
+â”œâ”€â”€ flash.bat                   # J-Link ä¸€é”®çƒ§å½•è„šæœ¬
+â”œâ”€â”€ GDf4_boot.jdebug            # SEGGER Ozone è°ƒè¯•å·¥ç¨‹
+â”‚
+â”œâ”€â”€ User/                       # åº”ç”¨å±‚
+â”‚   â”œâ”€â”€ main.c                  # å…¥å£: åˆå§‹åŒ– â†’ bootloader_branch()
+â”‚   â””â”€â”€ main.h                  # Flash åˆ†åŒºå® (APP_ADDR ç­‰)
+â”‚
+â”œâ”€â”€ Driver/
+â”‚   â”œâ”€â”€ BSP/                    # æ¿çº§é©±åŠ¨ (Board Support Package)
+â”‚   â”‚   â”œâ”€â”€ Source/
+â”‚   â”‚   â”‚   â”œâ”€â”€ boot.c          # â˜… Bootloader æ ¸å¿ƒ (CLI / Ymodem / OTA / è·³è½¬)
+â”‚   â”‚   â”‚   â”œâ”€â”€ usart.c         # USART0 (DMA æŽ¥æ”¶ + çŽ¯å½¢ç¼“å†²)
+â”‚   â”‚   â”‚   â”œâ”€â”€ spi.c           # SPI1 é©±åŠ¨
+â”‚   â”‚   â”‚   â”œâ”€â”€ iic.c           # è½¯ä»¶ I2C
+â”‚   â”‚   â”‚   â”œâ”€â”€ gd25q40e.c      # GD25Q40E SPI Flash
+â”‚   â”‚   â”‚   â”œâ”€â”€ AT24c256.c      # AT24C256 EEPROM
+â”‚   â”‚   â”‚   â””â”€â”€ fmc.c           # å†…éƒ¨ Flash æ“¦å†™
+â”‚   â”‚   â””â”€â”€ Include/
+â”‚   â”‚
+â”‚   â”œâ”€â”€ CMSIS/                  # ARM CMSIS + GD32F4xx èŠ¯ç‰‡å¤´æ–‡ä»¶
+â”‚   â”œâ”€â”€ LIB/                    # GD32F4xx æ ‡å‡†å¤–è®¾åº“ V3.3.2
+â”‚   â””â”€â”€ SYSTEM/                 # SysTick / DWT å»¶æ—¶ / ä¸­æ–­å¤„ç†
+â”‚
+â”œâ”€â”€ Project/
+â”‚   â”œâ”€â”€ gd32f470xE_flash.ld     # é“¾æŽ¥è„šæœ¬ (1024K Flash / 192K RAM)
+â”‚   â””â”€â”€ startup_gd32f450_470.S  # å¯åŠ¨æ±‡ç¼–
+â”‚
+â””â”€â”€ Output/                     # ç¼–è¯‘äº§ç‰© (Docker ç”Ÿæˆ)
 ```
 
-## ¼¼ÊõÒªµã
+## æŠ€æœ¯è¦ç‚¹
 
-- **ÑÓÊ±**: `delay_us()` »ùÓÚ DWT ÖÜÆÚ¼ÆÊýÆ÷ (²»Õ¼ SysTick)£»`delay_ms()` / `delay_1ms()` »ùÓÚ SysTick 1 kHz ÖÐ¶Ï
-- **´®¿Ú½ÓÊÕ**: USART0 DMA + ¿ÕÏÐÖÐ¶Ï£¬Êý¾Ý´æÈë»·ÐÎ»º³åÇø£¬Áã¿½±´½âÎö
-- **Ìø×ª°²È«**: ¹ØÖÐ¶Ï ¡ú Í£ SysTick ¡ú Çå NVIC ¡ú Ë¢ Cache ¡ú deinit ÍâÉè ¡ú Éè VTOR ¡ú Éè MSP ¡ú Ìø×ª
-- **±àÒëÓÅ»¯**: `-O2 -ffunction-sections -fdata-sections` + `--gc-sections` ²Ã¼ôÎ´ÓÃ´úÂë
+- **å»¶æ—¶**: `delay_us()` åŸºäºŽ DWT å‘¨æœŸè®¡æ•°å™¨ (ä¸å  SysTick)ï¼›`delay_ms()` / `delay_1ms()` åŸºäºŽ SysTick 1 kHz ä¸­æ–­
+- **ä¸²å£æŽ¥æ”¶**: USART0 DMA + ç©ºé—²ä¸­æ–­ï¼Œæ•°æ®å­˜å…¥çŽ¯å½¢ç¼“å†²åŒºï¼Œé›¶æ‹·è´è§£æž
+- **è·³è½¬å®‰å…¨**: å…³ä¸­æ–­ â†’ åœ SysTick â†’ æ¸… NVIC â†’ åˆ· Cache â†’ deinit å¤–è®¾ â†’ è®¾ VTOR â†’ è®¾ MSP â†’ è·³è½¬
+- **ç¼–è¯‘ä¼˜åŒ–**: `-O2 -ffunction-sections -fdata-sections` + `--gc-sections` è£å‰ªæœªç”¨ä»£ç 
 
-## Ðí¿ÉÖ¤
+## è®¸å¯è¯
 
-- **GigaDevice SDK**: BSD 3-Clause (Copyright 0„8 2025, GigaDevice Semiconductor Inc.)
-- **Ó¦ÓÃ´úÂë**: Ïê¼û¸÷Ô´ÎÄ¼þÍ·²¿
+- **GigaDevice SDK**: BSD 3-Clause (Copyright Â© 2025, GigaDevice Semiconductor Inc.)
+- **åº”ç”¨ä»£ç **: è¯¦è§å„æºæ–‡ä»¶å¤´éƒ¨
