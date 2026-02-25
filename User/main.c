@@ -45,26 +45,28 @@ int main(void){
 	delay_init();        // 初始化 DWT 周期计数器，delay_us 依赖它（不再占用 SysTick）
 	iic_init();
 	gd25q40e_init();
-	
-	AT24_ReadOTAInfo();
-	bootloader_branch();
+	usart1_init(115200);
+	//AT24_ReadOTAInfo();
+	//bootloader_branch();
 
 
- 
+
+  
+
 	while(1) 
     {
+        /* 轮询 USART1 接收的 MQTT 推送，驱动 OTA 状态机 */
+        mqtt_ota_poll();
 
-        
-        if(u0_ucb.out!=u0_ucb.in){  // 有数据
-             // 处理数据
-             u0_printf("CMD: 0x%02X, len=%d\r\n", u0_ucb.out->st[0], u0_ucb.out->ed - u0_ucb.out->st + 1);
-             bootloader_cli_event(u0_ucb.out->st,u0_ucb.out->ed-u0_ucb.out->st+1);
-             u0_ucb.out++;
-
-            if(u0_ucb.out > u0_ucb.end){  // > 而非 >=，让最后一个槽位可用
-                    u0_ucb.out=&u0_ucb.uart_infro_buf[0];
+        /* 处理 USART0 调试命令 */
+        if (u0_ucb.out != u0_ucb.in) {
+            u0_ucb.out++;
+            if (u0_ucb.out > u0_ucb.end) {
+                u0_ucb.out = &u0_ucb.uart_infro_buf[0];
             }
         }
+
+        delay_ms(5);
     }
 }
 

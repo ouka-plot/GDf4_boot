@@ -88,13 +88,42 @@ void USART0_IRQHandler(void){
 
  }
 
-	
+/* ====================================================================
+ *  USART1 空闲中断  DMA0_CH5  —— 与 USART0 完全对称的环形 UCB 管理
+ * ==================================================================== */
+void USART1_IRQHandler(void)
+{
+	if (usart_interrupt_flag_get(USART1, USART_INT_FLAG_IDLE) == 1) {
+		/* 读 STAT0 + DATA 清除 IDLE 标志位（硬件要求） */
+		(void)USART_STAT0(USART1);
+		(void)USART_DATA(USART1);
 
+		uint32_t count = (u1_rx_max + 1) - dma_transfer_number_get(DMA0, DMA_CH5);
 
+		if (count > 0) {
+			u1_ucb.totol_date += count;
+			u1_ucb.in->ed = &u1_rxbuf[u1_ucb.totol_date - 1];
+			u1_ucb.in++;
+			if (u1_ucb.in > u1_ucb.end) {
+				u1_ucb.in = &u1_ucb.uart_infro_buf[0];
+			}
 
+			if (u1_rx_bufmax - u1_ucb.totol_date < u1_rx_max) {
+				u1_ucb.in->st = u1_rxbuf;
+				u1_ucb.totol_date = 0;
+			} else {
+				u1_ucb.in->st = &u1_rxbuf[u1_ucb.totol_date];
+			}
+		}
 
-
-
+		/* 重新配置 DMA 接收 */
+		dma_channel_disable(DMA0, DMA_CH5);
+		dma_flag_clear(DMA0, DMA_CH5, DMA_FLAG_FTF | DMA_FLAG_HTF);
+		dma_transfer_number_config(DMA0, DMA_CH5, u1_rx_max + 1);
+		dma_memory_address_config(DMA0, DMA_CH5, DMA_MEMORY_0, (uint32_t)(u1_ucb.in->st));
+		dma_channel_enable(DMA0, DMA_CH5);
+	}
+}
 
 /*!
     \brief      this function handles NMI exception
@@ -210,4 +239,5 @@ void SysTick_Handler(void)
 {
 //    led_spark();
     delay_decrement();
+    tick_increment();
 }

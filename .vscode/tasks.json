@@ -108,7 +108,8 @@
                 "cwd": "${fileDirname}"
             },
             "problemMatcher": [
-                "$msCompile"
+                "$msCompile",
+                "$gcc"
             ],
             "group": {
                 "kind": "build",

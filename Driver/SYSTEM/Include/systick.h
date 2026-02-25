@@ -43,5 +43,8 @@ void systick_config(void);
 void delay_1ms(uint32_t count);
 /* delay decrement */
 void delay_decrement(void);
+/* ºÁÃë¼ÆÊýÆ÷ (SysTick 1kHz Çý¶¯) */
+void tick_increment(void);
+uint32_t Get_Tick(void);
 
 #endif /* SYS_TICK_H */

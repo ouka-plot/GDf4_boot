@@ -2,7 +2,7 @@
  * @Author: oukaa 3328236081@qq.com
  * @Date: 2026-01-15 14:24:54
  * @LastEditors: oukaa 3328236081@qq.com
- * @LastEditTime: 2026-02-10 18:10:56
+ * @LastEditTime: 2026-02-25 23:48:21
  * @FilePath: \GDf4_boot\User\main.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -47,6 +47,7 @@ OF SUCH DAMAGE.
 #include "gd32f4xx.h"
 #include "systick.h"
 #include <stdio.h>
+#include <string.h>
 #include "usart.h"
 #include "delay.h"
 #include "iic.h"
@@ -55,6 +56,8 @@ OF SUCH DAMAGE.
 #include "gd25q40e.h"
 #include "fmc.h"
 #include "boot.h"
+#include "esp8266.h"
+
 
 
 //BANK 0 1024KB
@@ -67,6 +70,7 @@ OF SUCH DAMAGE.
 //APP_SECTOR_SIZE 0X10000    //APP扇区大小 sector 64  128 128 128 128 ... //4 5 6 ...
 #define APP_ADDR 0X08010000   //用户程序起始地址，必须是扇区的整数倍
 #define APP_SECTOR_NUM 8   //APP扇区数量  64kB + 128kB*7 = 960kB // 4 5 6 7 8 9 10 11
+
 
 
 

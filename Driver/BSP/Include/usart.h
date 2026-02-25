@@ -2,7 +2,7 @@
  * @Author: oukaa 3328236081@qq.com
  * @Date: 2026-02-18 21:44:12
  * @LastEditors: oukaa 3328236081@qq.com
- * @LastEditTime: 2026-02-18 23:26:44
+ * @LastEditTime: 2026-02-26 00:07:39
  * @FilePath: \GDf4_boot\GDf4_boot\Driver\BSP\Include\usart.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -40,27 +40,42 @@ typedef struct
 typedef struct{
 	uint16_t totol_date;
 	uart_rxbuff_ptr uart_infro_buf[ucb_num];
-	uart_rxbuff_ptr *in;
-	uart_rxbuff_ptr *out;
-	uart_rxbuff_ptr *end;
+	volatile uart_rxbuff_ptr *in;
+	volatile uart_rxbuff_ptr *out;
+	volatile uart_rxbuff_ptr *end;
 
 }uart_ucb;
 
 
 
+/* ---------- USART0 (PA9/PA10) 调试串口 ---------- */
 extern uint8_t uart_rxbuf[rx_bufmax];
 extern uint8_t uart_txbuf[tx_bufmax];
-
 extern uart_rxbuff_ptr u0_rxbuff_ptr;
 extern volatile uart_ucb u0_ucb;
-
 
 void usart0_init(uint32_t baudrate);
 void uart_ptr_init(void);
 void dma_init(void);
 void u0_printf(char *format,...);
-void usart0_init(uint32_t baudrate);
 
+/* ---------- USART1 (PD5-TX / PD6-RX) 通信串口 ---------- */
+/*  DMA0_CH5, sub-peripheral 4, USART1_RX               */
+#define u1_rx_max    1100         /* 单帧最大字节 */
+#define u1_rx_bufmax 4096         /* 接收环形缓冲区 */
+#define u1_tx_bufmax 2048         /* 发送缓冲区 */
+#define u1_ucb_num   4            /* 控制块槽数 */
+
+extern uint8_t  u1_rxbuf[u1_rx_bufmax];
+extern uint8_t  u1_txbuf[u1_tx_bufmax];
+extern volatile uart_ucb u1_ucb;
+
+void usart1_init(uint32_t baudrate);
+void u1_uart_ptr_init(void);
+void u1_dma_init(void);
+void u1_printf(char *format,...);
+void u1_send_bytes(const uint8_t *data, uint16_t len);
+void u1_send_string(const char *str);
 
 #endif
 

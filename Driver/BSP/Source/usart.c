@@ -147,4 +147,123 @@ while(usart_flag_get(USART0,USART_FLAG_TBE)!=1);  //传输缓冲区为空
 //main tx处理数据 ->printf out
 
 
+/* ====================================================================
+ *  USART1  PD5(TX) / PD6(RX) —— 通信串口 (如 ESP8266)
+ *  DMA0_CH5, sub-peripheral 4, Normal 模式
+ *  完全借鉴 USART0 的 DMA+空闲中断 + UCB 环形管理
+ * ==================================================================== */
+
+uint8_t  u1_rxbuf[u1_rx_bufmax];
+uint8_t  u1_txbuf[u1_tx_bufmax];
+volatile uart_ucb u1_ucb;
+
+/* USART1 DMA 初始化  —— DMA0_CH5, SUBPERI4 */
+void u1_dma_init(void)
+{
+	rcu_periph_clock_enable(RCU_DMA0);
+
+	dma_deinit(DMA0, DMA_CH5);
+
+	dma_single_data_parameter_struct dma0_struct;
+
+	dma0_struct.periph_addr         = (uint32_t)&USART_DATA(USART1);
+	dma0_struct.periph_inc          = DMA_PERIPH_INCREASE_DISABLE;
+	dma0_struct.memory0_addr        = (uint32_t)u1_rxbuf;
+	dma0_struct.memory_inc          = DMA_MEMORY_INCREASE_ENABLE;
+	dma0_struct.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
+	dma0_struct.circular_mode       = DMA_CIRCULAR_MODE_DISABLE;
+	dma0_struct.direction           = DMA_PERIPH_TO_MEMORY;
+	dma0_struct.number              = u1_rx_max + 1;   /* 和 USART0 一样 +1 */
+	dma0_struct.priority            = DMA_PRIORITY_HIGH;
+
+	dma_single_data_mode_init(DMA0, DMA_CH5, &dma0_struct);
+	dma_channel_subperipheral_select(DMA0, DMA_CH5, DMA_SUBPERI4);
+
+	dma_channel_enable(DMA0, DMA_CH5);
+}
+
+/* USART1 UCB 指针初始化 */
+void u1_uart_ptr_init(void)
+{
+	u1_ucb.totol_date = 0;
+	u1_ucb.in  = u1_ucb.uart_infro_buf;
+	u1_ucb.out = u1_ucb.uart_infro_buf;
+	u1_ucb.end = &u1_ucb.uart_infro_buf[u1_ucb_num - 1];
+	u1_ucb.in->st = u1_rxbuf;
+}
+
+/* USART1 初始化  PD5(TX) PD6(RX) AF7 */
+void usart1_init(uint32_t baudrate)
+{
+	/* 时钟 */
+	rcu_periph_clock_enable(RCU_GPIOD);
+	rcu_periph_clock_enable(RCU_USART1);
+
+	/* GPIO: PD5=TX 推挽复用, PD6=RX 复用上拉 */
+	gpio_af_set(GPIOD, GPIO_AF_7, GPIO_PIN_5);
+	gpio_mode_set(GPIOD, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_5);
+	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_5);
+
+	gpio_af_set(GPIOD, GPIO_AF_7, GPIO_PIN_6);
+	gpio_mode_set(GPIOD, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_6);
+	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
+
+	/* USART 配置 */
+	usart_deinit(USART1);
+	usart_baudrate_set(USART1, baudrate);
+	usart_parity_config(USART1, USART_PM_NONE);
+	usart_word_length_set(USART1, USART_WL_8BIT);
+	usart_stop_bit_set(USART1, USART_STB_1BIT);
+	usart_transmit_config(USART1, USART_TRANSMIT_ENABLE);
+	usart_receive_config(USART1, USART_RECEIVE_ENABLE);
+
+	/* DMA 接收 */
+	usart_dma_receive_config(USART1, USART_RECEIVE_DMA_ENABLE);
+
+	/* 空闲中断 */
+	nvic_irq_enable(USART1_IRQn, 1, 0);           /* 优先级略低于 USART0(0,0) */
+	usart_interrupt_enable(USART1, USART_INT_IDLE);
+
+	u1_dma_init();
+	u1_uart_ptr_init();
+
+	usart_enable(USART1);
+}
+
+/* USART1 格式化打印 */
+void u1_printf(char *format, ...)
+{
+	uint16_t i;
+	va_list listdata;
+	va_start(listdata, format);
+	vsprintf((char *)u1_txbuf, format, listdata);
+	va_end(listdata);
+
+	for (i = 0; i < strlen((const char *)u1_txbuf); i++) {
+		while (usart_flag_get(USART1, USART_FLAG_TBE) != 1)
+			;
+		usart_data_transmit(USART1, (uint16_t)u1_txbuf[i]);
+	}
+	while (usart_flag_get(USART1, USART_FLAG_TBE) != 1);
+}
+
+/* 阻塞式发送 n 字节 */
+void u1_send_bytes(const uint8_t *data, uint16_t len)
+{
+	for (uint16_t i = 0; i < len; i++) {
+		while (usart_flag_get(USART1, USART_FLAG_TBE) != 1);
+		usart_data_transmit(USART1, data[i]);
+	}
+	while (usart_flag_get(USART1, USART_FLAG_TC) != 1);
+}
+
+/* 发送以 '\0' 结尾的字符串 */
+void u1_send_string(const char *str)
+{
+	while (*str) {
+		while (usart_flag_get(USART1, USART_FLAG_TBE) != 1);
+		usart_data_transmit(USART1, (uint8_t)*str++);
+	}
+	while (usart_flag_get(USART1, USART_FLAG_TC) != 1);
+}
 

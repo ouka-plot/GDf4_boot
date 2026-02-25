@@ -36,6 +36,7 @@ OF SUCH DAMAGE.
 #include "systick.h"
 
 volatile static uint32_t delay;
+volatile static uint32_t g_tick_ms = 0;   /* 系统毫秒计数器 */
 
 /*!
     \brief    configure systick
@@ -80,4 +81,14 @@ void delay_decrement(void)
     if(0U != delay) {
         delay--;
     }
+}
+
+void tick_increment(void)
+{
+    g_tick_ms++;
+}
+
+uint32_t Get_Tick(void)
+{
+    return g_tick_ms;
 }

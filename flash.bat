@@ -26,4 +26,3 @@ echo q >> tmp_flash.jlink
 del tmp_flash.jlink
 
 echo Flash Process Finished.
-pause
