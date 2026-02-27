@@ -1,184 +1,315 @@
-# GDf4_boot â€” GD32F470 Bootloader
+# GDf4_boot ¡ª GD32F470 Bootloader + APP Monorepo
 
-åŸºäºŽ **GD32F470** (Cortex-M4F @ 240 MHz) çš„ä¸²å£ IAP + OTA Bootloaderï¼Œä½¿ç”¨ Docker å®¹å™¨åŒ–äº¤å‰ç¼–è¯‘ã€‚
+»ùÓÚ **GD32F470VGT6** (Cortex-M4F, 240 MHz) µÄ **Boot + APP Ë«¹Ì¼þ**¼Ü¹¹£¬²ÉÓÃ Monorepo ¹ÜÀí¡£
 
-## åŠŸèƒ½ç‰¹æ€§
+## ¹¦ÄÜÌØÐÔ
 
-| åŠŸèƒ½ | è¯´æ˜Ž |
+### Bootloader (Boot)
+- **´®¿Ú IAP**£ºUSART0 Ymodem Ð­ÒéÏÂÔØ¹Ì¼þ
+- **OTA °áÔË**£º¼ì²â EEPROM ±êÖ¾ ¡ú ´ÓÍâ²¿ Flash °áÔË¹Ì¼þµ½ÄÚ²¿ Flash
+- **CLI ²Ù×÷Ì¨**£ºÉÏµç 2s ÄÚ°´ `w` ½øÈë£¬Ö§³Ö²Á³ý / ±¸·Ý / »Ö¸´ / °æ±¾¹ÜÀí / ÍøÂçÅäÖÃ
+- **ÍøÂçÅäÖÃ CLI**£ºÊ×´ÎÊ¹ÓÃÊ±Í¨¹ý´®¿ÚÊäÈë WiFi ºÍ MQTT Æ¾¾Ý£¬³Ö¾Ã»¯µ½ EEPROM
+
+### APP (Ó¦ÓÃ)
+- **MQTT OTA**£ºESP8266 Á¬½Ó WiFi + MQTT Broker£¬×Ô¶¯½ÓÊÕ¹Ì¼þ²¢Ð´ÈëÍâ²¿ Flash
+- **×Ô¶¯ÖØÆô**£ºÎ´ÅäÖÃÍøÂçÆ¾¾ÝÊ±ÌáÊ¾ÓÃ»§²¢ 10s ºó×Ô¶¯ÖØÆô½øÈë Boot CLI
+- **ÒµÎñÂß¼­**£ºÖ÷Ñ­»·ÖÐÔËÐÐÓÃ»§ÒµÎñ´úÂë
+
+## ¼Ü¹¹¸ÅÀÀ
+
+```
+©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+©¦                    ÉÏµç / ¸´Î»                              ©¦
+©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©Ð©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+                       ¨‹
+©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+©¦  Boot (0x08000000, 64KB)                                 ©¦
+©¦                                                          ©¦
+©¦  1. ³õÊ¼»¯ºËÐÄÍâÉè (USART0, I2C, SysTick)                ©¦
+©¦  2. ¶Á EEPROM OTA ±êÖ¾                                   ©¦
+©¦  3. ÓÐ±êÖ¾? ¡ú OTA °áÔË (Íâ²¿Flash¡úÄÚ²¿Flash) ¡ú Ìø×ª APP   ©¦
+©¦  4. ÎÞ±êÖ¾? ¡ú µÈ´ý 2s CLI ´°¿Ú (°´'w'½øÈë)               ©¦
+©¦  5. ÎÞÊäÈë? ¡ú Ö±½ÓÌø×ª APP                                ©¦
+©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©Ð©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+                        ¨‹
+©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+©¦  APP (0x08010000, 960KB)                                 ©¦
+©¦                                                          ©¦
+©¦  1. VTOR ÖØ¶¨Î» ¡ú ³õÊ¼»¯ÍâÉè                              ©¦
+©¦  2. ¶Á EEPROM NetConfig                                  ©¦
+©¦  3. ÎÞÅäÖÃ? ¡ú ÌáÊ¾ + 10s ×Ô¶¯ÖØÆôµ½ Boot CLI              ©¦
+©¦  4. ÓÐÅäÖÃ? ¡ú ESP8266_Init ¡ú WiFi ¡ú MQTT                 ©¦
+©¦  5. Ö÷Ñ­»·: mqtt_ota_poll() + ÒµÎñÂß¼­                    ©¦
+©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+```
+
+## Ê×´ÎÊ¹ÓÃÁ÷³Ì
+
+```
+ÉÏµç ¡ú Boot ¡ú Ìø×ª APP ¡ú ¼ì²âÎÞ NetConfig ¡ú ÌáÊ¾ ¡ú 10s ×Ô¶¯ÖØÆô
+                                                         ¡ý
+ÉÏµç ¡ú Boot ¡ú 2s ÄÚ°´'w' ¡ú CLI ¡ú ÊäÈëÍøÂçÅäÖÃ ¡ú ÖØÆô
+                                    ¡ý
+                              8 MySSID,MyPass        (ÉèÖÃ WiFi)
+                              9 mqtt.io,1883,dev01,user,pass  (ÉèÖÃ MQTT)
+                              0                      (²é¿´ÅäÖÃ)
+                              7                      (ÖØÆô)
+                                    ¡ý
+ÉÏµç ¡ú Boot ¡ú Ìø×ª APP ¡ú ¶Áµ½ NetConfig ¡ú ESP8266 Á¬½Ó ¡ú MQTT OTA ¾ÍÐ÷ 7½7
+```
+
+## Ó²¼þÆ½Ì¨
+
+| ÏîÄ¿ | ¹æ¸ñ |
 |------|------|
-| **ä¸²å£ IAP** | USART0 + Ymodem åè®®ï¼Œå°†å›ºä»¶ç›´æŽ¥çƒ§å†™åˆ°å†…éƒ¨ Flash APP åŒº |
-| **OTA å‡çº§** | APP å°†å›ºä»¶åŒ…å­˜å…¥å¤–éƒ¨ SPI Flash â†’ è®¾ç½® EEPROM æ ‡å¿— â†’ é‡å¯åŽ Bootloader è‡ªåŠ¨æ¬è¿ |
-| **å¤‡ä»½ / æ¢å¤** | å†…éƒ¨ Flash APP åŒº â†” å¤–éƒ¨ SPI Flash åŒå‘æ¬è¿ |
-| **ä¸²å£ CLI** | ä¸Šç”µ 2 s å†…æŒ‰ `w` è¿›å…¥å‘½ä»¤è¡Œï¼Œæ”¯æŒæ“¦é™¤ã€ä¸‹è½½ã€å¤‡ä»½ã€æ¢å¤ã€æŸ¥è¯¢ç­‰ |
-| **å®‰å…¨è·³è½¬** | MSP æ ¡éªŒ â†’ NVIC æ¸…ç† â†’ I/D-Cache åˆ·æ–° â†’ ååˆå§‹åŒ–å¤–è®¾ â†’ è·³è½¬ APP |
+| MCU | GD32F470VGT6 (Cortex-M4F @ 240 MHz) |
+| Flash | 1024 KB ÄÚ²¿ + 4 Mbit GD25Q40E (SPI) |
+| RAM | 192 KB SRAM + 64 KB TCMRAM |
+| WiFi | ESP8266 (AT ¹Ì¼þ, USART1 @ 115200) |
+| EEPROM | AT24C256 (I2C Èí¼þÄ£Äâ) |
+| µ÷ÊÔ¿Ú | USART0 @ 921600 (PA9/PA10) |
+| ±àÒëÆ÷ | arm-none-eabi-gcc 10.3.1 (Docker ÈÝÆ÷) |
 
-## ç¡¬ä»¶å¹³å°
+## ´æ´¢·ÖÇø
 
-| ç»„ä»¶ | åž‹å· / å‚æ•° |
-|------|-------------|
-| MCU | GD32F470VG â€” Cortex-M4F, 1024 KB Flash (Bank0), 192 KB SRAM + 64 KB TCMRAM |
-| å¤–éƒ¨ Flash | GD25Q40E â€” 4 Mbit SPI Flashï¼ˆå­˜å‚¨ OTA å›ºä»¶åŒ…ï¼‰ |
-| EEPROM | AT24C256 â€” 256 Kbit I2C EEPROMï¼ˆå­˜å‚¨ OTA å‡çº§æ ‡å¿—ï¼‰ |
-| è°ƒè¯•å™¨ | J-Link (SWD) |
-| ä¸²å£ | USART0 â€” PA9(TX) / PA10(RX)ï¼Œ921600 baudï¼Œ8N1 |
-
-## Flash åˆ†åŒº
+### ÄÚ²¿ Flash (1024 KB)
 
 ```
-  0x08000000 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-             â”‚  Bootloader (64 KB)    â”‚  Sector 0-3  (16 KB Ã— 4)
-  0x08010000 â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-             â”‚                        â”‚  Sector 4    (64 KB)
-             â”‚    APP åŒº (960 KB)     â”‚  Sector 5-11 (128 KB Ã— 7)
-  0x08100000 â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-
-  å¤–éƒ¨ SPI Flash (GD25Q40E, 512 KB):
-  0x00000000 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-             â”‚  OTA Header (144 B)    â”‚  magic + æ®µæè¿°
-             â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-             â”‚  å›ºä»¶æ•°æ®              â”‚  æŒ‰æ®µå­˜æ”¾
-             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+©¦  Boot (64 KB)                  ©¦  0x0800_0000 - 0x0800_FFFF   Sector 0-3
+©À©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©È
+©¦  APP  (960 KB)                 ©¦  0x0801_0000 - 0x080F_FFFF   Sector 4-11
+©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
 ```
 
-## OTA å‡çº§æµç¨‹
+### Íâ²¿ SPI Flash (GD25Q40E, 512 KB)
 
 ```
-  APP ç«¯                          Bootloader ç«¯
-  â”€â”€â”€â”€â”€                           â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  â‘  æŽ¥æ”¶å›ºä»¶åŒ…ï¼Œå†™å…¥ GD25Q40E
-  â‘¡ æž„é€  OTA_Header å†™å…¥åœ°å€ 0
-  â‘¢ EEPROM ç½® boot_flag  â”€â”€â”€â”€â”€â”€â†’  â‘£ é‡å¯åŽæ£€æµ‹åˆ° boot_flag
-                                   â‘¤ ä»Žå¤–éƒ¨ Flash è¯»å– OTA_Header
-                                   â‘¥ é€æ®µæ¬è¿: å¤–éƒ¨ Flash â†’ å†…éƒ¨ Flash
-                                   â‘¦ æ¸…é™¤ boot_flagï¼Œå›žå†™ EEPROM
-                                   â‘§ è·³è½¬ APP
+©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+©¦ Page 0: OTA_Header (256 B)     ©¦  OTA ÃèÊöÐÅÏ¢ (magic + ¶Î±í)
+©À©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©È
+©¦ Page 1+: ¹Ì¼þÊý¾Ý              ©¦  hex-decoded Ô­Ê¼ bin
+©¸©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
 ```
 
-## CLI å‘½ä»¤
+### EEPROM (AT24C256) ²¼¾Ö
 
-ä¸Šç”µåŽ 2 ç§’å†…é€šè¿‡ä¸²å£å‘é€ `w` è¿›å…¥å‘½ä»¤è¡Œï¼š
+| µØÖ· | ´óÐ¡ | ÄÚÈÝ |
+|------|------|------|
+| `0x0000` | 8 B | `OTA_InfoCB` ¡ª boot_flag + header_addr |
+| `0x0008` | 4 B | OTA °æ±¾ºÅ |
+| `0x0040` | 156 B | `NetConfig` ¡ª WiFi/MQTT Æ¾¾Ý (magic + ssid + pass + host + port + client_id + user + pass) |
 
-| æŒ‰é”® | åŠŸèƒ½ |
+## MQTT OTA Éý¼¶Á÷³Ì
+
+```
+¨X¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨[                          ¨X¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨[
+¨U  MQTT Broker     ¨U                          ¨U  GD32F470 (APP)  ¨U
+¨U  (·þÎñÆ÷·¢²¼ OTA) ¨U ©¤©¤©¤©¤©¤©¤©¤ WiFi ©¤©¤©¤©¤©¤©¤©¤©¤©¤¡ú ¨U  ESP8266 AT      ¨U
+¨^¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨a                          ¨^¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨T¨a
+                                                      ©¦
+                      ©°©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¼
+                      ¨‹                                    ©°©¤©¤©¤©¤ Boot ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©´
+  ¢Ù ·¢²¼ "OTA:START:<size>"  ¡ú  ½âÎöÆðÊ¼Ö¡£¬²Á³ýÍâ²¿ Flash
+  ¢Ú ·¢²¼ hex ±àÂëÊý¾ÝÖ¡      ¡ú  ½âÂëÐ´Èë GD25Q40E (Ã¿ 256B Ò»Ò³)
+  ¢Û ·¢²¼ "OTA:END"           ¡ú  ¹¹Ôì OTA_Header Ð´ÈëµÚ 0 Ò³
+                                 EEPROM ÖÃ boot_flag
+                                 Èí¸´Î»               ©¤©¤©¤©¤©¤¡ú  ¢Ü ¼ì²âµ½ boot_flag
+                                                              ¢Ý ¶ÁÈ¡ OTA_Header
+                                                              ¢Þ Öð¶Î°áÔË: Íâ²¿ Flash ¡ú ÄÚ²¿ Flash
+                                                              ¢ß Çå³ý boot_flag£¬»ØÐ´ EEPROM
+                                                              ¢à Ìø×ª APP
+```
+
+### OTA Ð­Òé¸ñÊ½
+
+ESP8266 AT ¹Ì¼þÊÕµ½ MQTT ÍÆËÍºóÍ¨¹ý USART1 ÉÏ±¨ `+MQTTSUBRECV:0,"device/ota",<len>,<payload>`
+
+| Ö¡ÀàÐÍ | payload ¸ñÊ½ | ËµÃ÷ |
+|--------|-------------|------|
+| ÆðÊ¼Ö¡ | `OTA:START:<total_size>` | Èç `OTA:START:12345` |
+| Êý¾ÝÖ¡ | hex ±àÂëµÄ¶þ½øÖÆ¹Ì¼þ·Ö¿é | Ã¿Ö¡ ¡Ü 1024B |
+| ½áÊøÖ¡ | `OTA:END` | ´¥·¢Ð´ Header + ÖØÆô |
+
+### OTA Êý¾Ý½á¹¹ (ota_types.h, Boot + APP ¹²ÓÃ)
+
+| ½á¹¹Ìå | ´óÐ¡ | ËµÃ÷ |
+|--------|------|------|
+| `OTA_Segment` | 16 B | target_addr / data_len / ext_offset / crc32 |
+| `OTA_Header` | 144 B | magic + seg_count + total_len + crc32 + segs[8] |
+| `OTA_InfoCB` | 8 B | boot_flag + header_addr (´æ EEPROM) |
+
+## CLI ÃüÁî
+
+ÉÏµçºó 2 ÃëÄÚÍ¨¹ý USART0 (921600) ·¢ËÍ `w` ½øÈëÃüÁîÐÐ£º
+
+| °´¼ü | ¹¦ÄÜ |
 |------|------|
-| `1` | æ“¦é™¤ APP åŒº Flash (Sector 4-11) |
-| `2` | ä¸²å£ Ymodem IAP ä¸‹è½½ |
-| `3` | è®¾ç½® OTA ç‰ˆæœ¬å· |
-| `4` | æŸ¥è¯¢ OTA ç‰ˆæœ¬å· |
-| `5` | å†…éƒ¨ Flash â†’ å¤–éƒ¨ Flashï¼ˆå¤‡ä»½ï¼‰ |
-| `6` | å¤–éƒ¨ Flash â†’ å†…éƒ¨ Flashï¼ˆæ¢å¤ï¼‰ |
-| `7` | è½¯ä»¶å¤ä½ |
-| `8` | æ‰“å° APP å‘é‡è¡¨å‰ 32 å­—èŠ‚ |
-| `h` | æ˜¾ç¤ºå¸®åŠ© |
+| `0` | ÏÔÊ¾µ±Ç°ÍøÂçÅäÖÃ |
+| `1` | ²Á³ý APP Çø Flash (Sector 4-11) |
+| `2` | ´®¿Ú Ymodem IAP ÏÂÔØ |
+| `3` | ÉèÖÃ OTA °æ±¾ºÅ |
+| `4` | ²éÑ¯ OTA °æ±¾ºÅ |
+| `5` | ÄÚ²¿ Flash ¡ú Íâ²¿ Flash£¨±¸·Ý£© |
+| `6` | Íâ²¿ Flash ¡ú ÄÚ²¿ Flash£¨»Ö¸´£© |
+| `7` | Èí¼þ¸´Î» |
+| `8` | ÉèÖÃ WiFi£º`8 SSID,PASSWORD` |
+| `9` | ÉèÖÃ MQTT£º`9 HOST,PORT,CLIENT_ID,USER,PASS` |
+| `d` | ´òÓ¡ APP ÏòÁ¿±íÇ° 32 ×Ö½Ú |
+| `h` | ÏÔÊ¾°ïÖú |
 
-## æž„å»º & çƒ§å½•
+## ¹¹½¨ & ÉÕÂ¼
 
-### çŽ¯å¢ƒè¦æ±‚
+### »·¾³ÒªÇó
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS / Linux)
-- [J-Link Software](https://www.segger.com/downloads/jlink/)ï¼ˆçƒ§å½• & è°ƒè¯•ï¼‰
+- [J-Link Software](https://www.segger.com/downloads/jlink/)£¨ÉÕÂ¼ & µ÷ÊÔ£©
 
-### 1. æž„å»º Docker é•œåƒï¼ˆä»…é¦–æ¬¡ï¼‰
+### 1. ¹¹½¨ Docker ¾µÏñ£¨½öÊ×´Î£©
 
-å°† `gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2` æ”¾åœ¨é¡¹ç›®æ ¹ç›®å½•ï¼š
+½« `gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2` ·ÅÔÚÏîÄ¿¸ùÄ¿Â¼£º
 
 ```powershell
 docker build -t gd32-env .
 ```
 
-### 2. ç¼–è¯‘å›ºä»¶
+### 2. ±àÒë Boot
 
 ```powershell
-# CMake é…ç½®ï¼ˆä»…é¦–æ¬¡ / CMakeLists.txt å˜æ›´åŽï¼‰
-docker run --rm -v "${PWD}:/app" gd32-env cmake -BOutput -GNinja
+# CMake ÅäÖÃ
+docker run --rm -v "${PWD}:/app" gd32-env cmake -S boot -B build_boot -G Ninja
 
-# ç¼–è¯‘
-docker run --rm -v "${PWD}:/app" gd32-env ninja -C Output
+# ±àÒë
+docker run --rm -v "${PWD}:/app" gd32-env ninja -C build_boot
 ```
 
-ç¼–è¯‘äº§ç‰©ä½äºŽ `Output/`ï¼š
+²úÎïÎ»ÓÚ `build_boot/`£º`GDf4_boot.elf` / `.hex` / `.bin` / `.map`
 
-| æ–‡ä»¶ | ç”¨é€” |
-|------|------|
-| `GDf4_boot.elf` | è°ƒè¯•ç”¨ï¼Œå«å®Œæ•´ç¬¦å· |
-| `GDf4_boot.hex` | J-Link çƒ§å½•ç”¨ |
-| `GDf4_boot.bin` | åŽŸå§‹äºŒè¿›åˆ¶ |
-| `GDf4_boot.map` | å†…å­˜æ˜ å°„ |
-
-### 3. çƒ§å½•
+### 3. ±àÒë APP
 
 ```powershell
-.\flash.bat
+# CMake ÅäÖÃ
+docker run --rm -v "${PWD}:/app" gd32-env cmake -S app -B build_app -G Ninja
+
+# ±àÒë
+docker run --rm -v "${PWD}:/app" gd32-env ninja -C build_app
 ```
 
-### VS Code å¿«æ·ä»»åŠ¡
+²úÎïÎ»ÓÚ `build_app/`£º`GDf4_app.elf` / `.hex` / `.bin` / `.map`
 
-| ä»»åŠ¡ | è¯´æ˜Ž |
+### 4. ÉÕÂ¼
+
+```powershell
+.\flash_boot.bat    # ÉÕÂ¼ Bootloader
+.\flash_app.bat     # ÉÕÂ¼ APP
+```
+
+### VS Code ¿ì½ÝÈÎÎñ
+
+| ÈÎÎñ | ËµÃ÷ |
 |------|------|
-|  **ä¸€é”®æž„å»ºçƒ§å½•** | ç¼–è¯‘ + J-Link çƒ§å½•ï¼ˆ`Ctrl+Shift+B`ï¼‰ |
-|  **å®Œæ•´é‡å»ºçƒ§å½•** | CMake é…ç½® â†’ ç¼–è¯‘ â†’ çƒ§å½• |
-| **Clean Output** | æ¸…ç†ç¼–è¯‘äº§ç‰© |
+| •0‹4 **Ò»¼ü¹¹½¨ÉÕÂ¼** | ±àÒë + J-Link ÉÕÂ¼£¨`Ctrl+Shift+B`£© |
+| ”9ã4 **ÍêÕûÖØ½¨ÉÕÂ¼** | CMake ÅäÖÃ ¡ú ±àÒë ¡ú ÉÕÂ¼ |
+| **Clean Output** | ÇåÀí±àÒë²úÎï |
 
-### è°ƒè¯•
+### µ÷ÊÔ
 
-- **VS Code**: æŒ‰ `F5` å¯åŠ¨ Cortex-Debug (J-Link SWD)
-- **SEGGER Ozone**: æ‰“å¼€ `GDf4_boot.jdebug`ï¼ˆå·²é…ç½® Docker `/app` â†’ æœ¬åœ°è·¯å¾„æ˜ å°„ï¼‰
+- **VS Code**: °´ `F5` Æô¶¯ Cortex-Debug (J-Link SWD)
+- **SEGGER Ozone**: ´ò¿ª `.jdebug` ¹¤³ÌÎÄ¼þ
 
-## å¼•è„šé…ç½®
+## Òý½ÅÅäÖÃ
 
-| å¤–è®¾ | å¼•è„š | å¤ç”¨ |
-|------|------|------|
-| USART0 TX | PA9 | AF7 |
-| USART0 RX | PA10 | AF7 |
-| SPI1 CS | PB12 | GPIO |
-| SPI1 SCK | PB13 | AF5 |
-| SPI1 MISO | PB14 | AF5 |
-| SPI1 MOSI | PB15 | AF5 |
-| I2C (è½¯ä»¶) | â€” | GPIO æ¨¡æ‹Ÿ |
+| ÍâÉè | Òý½Å | ¸´ÓÃ | ±¸×¢ |
+|------|------|------|------|
+| USART0 TX | PA9 | AF7 | µ÷ÊÔ´®¿Ú 921600 |
+| USART0 RX | PA10 | AF7 | |
+| USART1 TX | PD5 | AF7 | ESP8266 115200 |
+| USART1 RX | PD6 | AF7 | |
+| SPI1 CS | PB12 | GPIO | GD25Q40E Æ¬Ñ¡ |
+| SPI1 SCK | PB13 | AF5 | |
+| SPI1 MISO | PB14 | AF5 | |
+| SPI1 MOSI | PB15 | AF5 | |
+| I2C SDA/SCL | ¡ª | GPIO | Èí¼þÄ£Äâ, AT24C256 |
 
-## ç›®å½•ç»“æž„
+## Ä¿Â¼½á¹¹
 
 ```
 GDf4_boot/
-â”œâ”€â”€ CMakeLists.txt              # CMake æž„å»ºè„šæœ¬
-â”œâ”€â”€ Dockerfile                  # Docker äº¤å‰ç¼–è¯‘çŽ¯å¢ƒ
-â”œâ”€â”€ flash.bat                   # J-Link ä¸€é”®çƒ§å½•è„šæœ¬
-â”œâ”€â”€ GDf4_boot.jdebug            # SEGGER Ozone è°ƒè¯•å·¥ç¨‹
-â”‚
-â”œâ”€â”€ User/                       # åº”ç”¨å±‚
-â”‚   â”œâ”€â”€ main.c                  # å…¥å£: åˆå§‹åŒ– â†’ bootloader_branch()
-â”‚   â””â”€â”€ main.h                  # Flash åˆ†åŒºå® (APP_ADDR ç­‰)
-â”‚
-â”œâ”€â”€ Driver/
-â”‚   â”œâ”€â”€ BSP/                    # æ¿çº§é©±åŠ¨ (Board Support Package)
-â”‚   â”‚   â”œâ”€â”€ Source/
-â”‚   â”‚   â”‚   â”œâ”€â”€ boot.c          # â˜… Bootloader æ ¸å¿ƒ (CLI / Ymodem / OTA / è·³è½¬)
-â”‚   â”‚   â”‚   â”œâ”€â”€ usart.c         # USART0 (DMA æŽ¥æ”¶ + çŽ¯å½¢ç¼“å†²)
-â”‚   â”‚   â”‚   â”œâ”€â”€ spi.c           # SPI1 é©±åŠ¨
-â”‚   â”‚   â”‚   â”œâ”€â”€ iic.c           # è½¯ä»¶ I2C
-â”‚   â”‚   â”‚   â”œâ”€â”€ gd25q40e.c      # GD25Q40E SPI Flash
-â”‚   â”‚   â”‚   â”œâ”€â”€ AT24c256.c      # AT24C256 EEPROM
-â”‚   â”‚   â”‚   â””â”€â”€ fmc.c           # å†…éƒ¨ Flash æ“¦å†™
-â”‚   â”‚   â””â”€â”€ Include/
-â”‚   â”‚
-â”‚   â”œâ”€â”€ CMSIS/                  # ARM CMSIS + GD32F4xx èŠ¯ç‰‡å¤´æ–‡ä»¶
-â”‚   â”œâ”€â”€ LIB/                    # GD32F4xx æ ‡å‡†å¤–è®¾åº“ V3.3.2
-â”‚   â””â”€â”€ SYSTEM/                 # SysTick / DWT å»¶æ—¶ / ä¸­æ–­å¤„ç†
-â”‚
-â”œâ”€â”€ Project/
-â”‚   â”œâ”€â”€ gd32f470xE_flash.ld     # é“¾æŽ¥è„šæœ¬ (1024K Flash / 192K RAM)
-â”‚   â””â”€â”€ startup_gd32f450_470.S  # å¯åŠ¨æ±‡ç¼–
-â”‚
-â””â”€â”€ Output/                     # ç¼–è¯‘äº§ç‰© (Docker ç”Ÿæˆ)
+©À©¤©¤ Dockerfile                     # Docker ½»²æ±àÒë»·¾³ (Ubuntu 22.04 + arm-none-eabi-gcc 10.3)
+©À©¤©¤ flash_boot.bat                 # J-Link ÉÕÂ¼ Boot
+©À©¤©¤ flash_app.bat                  # J-Link ÉÕÂ¼ APP
+©À©¤©¤ README.md
+©¦
+©À©¤©¤ cmake/
+©¦   ©¸©¤©¤ arm-none-eabi.cmake        # ¡ï ¹²Ïí¹¤¾ßÁ´ÎÄ¼þ (Cortex-M4F)
+©¦
+©À©¤©¤ boot/                          # ©¤©¤ Bootloader ¹Ì¼þ ©¤©¤
+©¦   ©À©¤©¤ CMakeLists.txt             # Boot ¹¹½¨½Å±¾ (²»±àÒë esp8266.c)
+©¦   ©À©¤©¤ main.c                     # Èë¿Ú: ³õÊ¼»¯ ¡ú OTA °áÔË ¡ú CLI ¡ú Ìø×ª APP
+©¦   ©À©¤©¤ main.h                     # Boot Í·ÎÄ¼þ (º¬ boot.h, net_config.h)
+©¦   ©¸©¤©¤ RTE_Components.h
+©¦
+©À©¤©¤ app/                           # ©¤©¤ APP ¹Ì¼þ ©¤©¤
+©¦   ©À©¤©¤ CMakeLists.txt             # APP ¹¹½¨½Å±¾ (²»±àÒë boot.c)
+©¦   ©À©¤©¤ gd32f470_app.ld            # APP Á´½Ó½Å±¾ (ÆðÊ¼ 0x08010000, 960KB)
+©¦   ©À©¤©¤ main.c                     # Èë¿Ú: VTOR ¡ú NetConfig ¡ú ESP8266 ¡ú MQTT OTA ÂÖÑ¯
+©¦   ©À©¤©¤ main.h                     # APP Í·ÎÄ¼þ (º¬ esp8266.h, ota_types.h)
+©¦   ©¸©¤©¤ RTE_Components.h
+©¦
+©À©¤©¤ shared/                        # ©¤©¤ ¹²ÏíÇý¶¯ (Boot + APP ¾ùÒýÓÃ) ©¤©¤
+©¦   ©À©¤©¤ BSP/
+©¦   ©¦   ©À©¤©¤ Include/
+©¦   ©¦   ©¦   ©À©¤©¤ boot.h             # Bootloader ºËÐÄÉùÃ÷ (CLI / Ìø×ª / OTA °áÔË)
+©¦   ©¦   ©¦   ©À©¤©¤ esp8266.h          # ESP8266 AT Çý¶¯ + MQTT OTA ×´Ì¬»ú
+©¦   ©¦   ©¦   ©À©¤©¤ ota_types.h        # ¡ï OTA Êý¾Ý½á¹¹ (OTA_Header / Segment / InfoCB)
+©¦   ©¦   ©¦   ©À©¤©¤ net_config.h       # ¡ï ÍøÂçÅäÖÃ½á¹¹Ìå + EEPROM ³Ö¾Ã»¯
+©¦   ©¦   ©¦   ©À©¤©¤ usart.h            # USART0/1 Çý¶¯
+©¦   ©¦   ©¦   ©À©¤©¤ AT24c256.h         # AT24C256 EEPROM Çý¶¯
+©¦   ©¦   ©¦   ©À©¤©¤ gd25q40e.h         # GD25Q40E SPI Flash Çý¶¯
+©¦   ©¦   ©¦   ©À©¤©¤ spi.h / iic.h / fmc.h
+©¦   ©¦   ©¦   ©¸©¤©¤ ...
+©¦   ©¦   ©¸©¤©¤ Source/
+©¦   ©¦       ©À©¤©¤ boot.c             # ¡ï Bootloader ºËÐÄ (CLI / Ymodem / OTA °áÔË / Ìø×ª)
+©¦   ©¦       ©À©¤©¤ esp8266.c          # ESP8266 AT Ö¸Áî + MQTT OTA ×´Ì¬»ú
+©¦   ©¦       ©À©¤©¤ net_config.c       # ¡ï NetConfig EEPROM ¶ÁÐ´
+©¦   ©¦       ©À©¤©¤ AT24c256.c         # EEPROM Çý¶¯ (º¬ ota_info/ota_header È«¾Ö±äÁ¿)
+©¦   ©¦       ©À©¤©¤ usart.c            # USART0/1 (DMA + ¿ÕÏÐÖÐ¶Ï + »·ÐÎ»º³å)
+©¦   ©¦       ©À©¤©¤ gd25q40e.c / spi.c / iic.c / fmc.c
+©¦   ©¦       ©¸©¤©¤ ...
+©¦   ©À©¤©¤ CMSIS/                     # ARM CMSIS + GD32F4xx Ð¾Æ¬Í·ÎÄ¼þ
+©¦   ©À©¤©¤ LIB/                       # GD32F4xx ±ê×¼ÍâÉè¿â V3.3.2
+©¦   ©¸©¤©¤ SYSTEM/                    # SysTick / DWT ÑÓÊ± / ÖÐ¶Ï´¦Àí
+©¦
+©À©¤©¤ Project/
+©¦   ©À©¤©¤ gd32f470xE_flash.ld        # Boot Á´½Ó½Å±¾ (0x08000000, È«Æ¬ 1024K)
+©¦   ©¸©¤©¤ startup_gd32f450_470.S     # Æô¶¯»ã±à (Boot + APP ¹²ÓÃ)
+©¦
+©À©¤©¤ build_boot/                    # Boot ±àÒë²úÎï (Docker Éú³É)
+©¸©¤©¤ build_app/                     # APP ±àÒë²úÎï (Docker Éú³É)
 ```
 
-## æŠ€æœ¯è¦ç‚¹
+### Boot vs APP ±àÒë²îÒì
 
-- **å»¶æ—¶**: `delay_us()` åŸºäºŽ DWT å‘¨æœŸè®¡æ•°å™¨ (ä¸å  SysTick)ï¼›`delay_ms()` / `delay_1ms()` åŸºäºŽ SysTick 1 kHz ä¸­æ–­
-- **ä¸²å£æŽ¥æ”¶**: USART0 DMA + ç©ºé—²ä¸­æ–­ï¼Œæ•°æ®å­˜å…¥çŽ¯å½¢ç¼“å†²åŒºï¼Œé›¶æ‹·è´è§£æž
-- **è·³è½¬å®‰å…¨**: å…³ä¸­æ–­ â†’ åœ SysTick â†’ æ¸… NVIC â†’ åˆ· Cache â†’ deinit å¤–è®¾ â†’ è®¾ VTOR â†’ è®¾ MSP â†’ è·³è½¬
-- **ç¼–è¯‘ä¼˜åŒ–**: `-O2 -ffunction-sections -fdata-sections` + `--gc-sections` è£å‰ªæœªç”¨ä»£ç 
+| | Boot (`boot/CMakeLists.txt`) | APP (`app/CMakeLists.txt`) |
+|---|---|---|
+| ÏîÄ¿Ãû | `GDf4_boot` | `GDf4_app` |
+| Á´½Ó½Å±¾ | `Project/gd32f470xE_flash.ld` (0x08000000) | `app/gd32f470_app.ld` (0x08010000) |
+| °üº¬ `boot.c` | 7¼3 | 7Ã4 |
+| °üº¬ `esp8266.c` | 7Ã4 | 7¼3 |
+| °üº¬ `net_config.c` | 7¼3 | 7¼3 |
 
-## è®¸å¯è¯
+## ¼¼ÊõÒªµã
 
-- **GigaDevice SDK**: BSD 3-Clause (Copyright Â© 2025, GigaDevice Semiconductor Inc.)
-- **åº”ç”¨ä»£ç **: è¯¦è§å„æºæ–‡ä»¶å¤´éƒ¨
+- **Boot/APP ·ÖÀë**: Boot ²»ÒÀÀµ ESP8266£¬Ö»¸ºÔð°áÔË + CLI£»WiFi/MQTT È«²¿ÔÚ APP ²ã
+- **NetConfig ³Ö¾Ã»¯**: ÍøÂçÆ¾¾Ý´æ EEPROM (0x0040)£¬156B packed ½á¹¹Ìå£¬¿çÒ³Ð´Èë
+- **MQTT OTA ×´Ì¬»ú**: `OTA_IDLE ¡ú OTA_RECEIVING ¡ú OTA_COMPLETE`£¬hex ½âÂë + 256B Ò³Ð´Èë
+- **ESP8266 ´íÎó´¦Àí**: `ESP8266_Init()` ·µ»Ø `esp8266_err_t` Ã¶¾Ù£¬ÎÞ `while(1)` ËÀÑ­»·
+- **ÑÓÊ±**: `delay_us()` »ùÓÚ DWT ÖÜÆÚ¼ÆÊýÆ÷ (²»Õ¼ SysTick)£»`delay_ms()` »ùÓÚ SysTick 1 kHz ÖÐ¶Ï
+- **´®¿Ú½ÓÊÕ**: USART0/1 DMA + ¿ÕÏÐÖÐ¶Ï£¬Êý¾Ý´æÈë»·ÐÎ»º³åÇø£¬Áã¿½±´½âÎö
+- **Ìø×ª°²È«**: ¹ØÖÐ¶Ï ¡ú Í£ SysTick ¡ú Çå NVIC ¡ú Ë¢ Cache ¡ú deinit ÍâÉè ¡ú Éè VTOR ¡ú Éè MSP ¡ú Ìø×ª
+- **±àÒëÓÅ»¯**: `-O2 -ffunction-sections -fdata-sections` + `--gc-sections` ²Ã¼ôÎ´ÓÃ´úÂë
+
+## Ðí¿ÉÖ¤
+
+- **GigaDevice SDK**: BSD 3-Clause (Copyright 0„8 2025, GigaDevice Semiconductor Inc.)
+- **Ó¦ÓÃ´úÂë**: Ïê¼û¸÷Ô´ÎÄ¼þÍ·²¿

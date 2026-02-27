@@ -3,6 +3,7 @@
 #include <stdbool.h>  // 确保编译器认识 _Bool
 #include "usart.h"
 #include "gd32f4xx_fmc.h"
+#include "net_config.h"
 
 _Bool bootloader_cli(uint32_t timeout_ms);
 void bootloader_cli_help(void);
@@ -520,9 +521,6 @@ static int8_t ymodem_receive(void){
     return -4;
 }
 
-OTA_InfoCB  ota_info   = {0};
-OTA_Header  ota_header = {0};
-
 load_a load_app;
 
 // 片上 Flash 扇区基址与大小（Bank0），用于地址 → 扇区号反查
@@ -629,6 +627,7 @@ _Bool bootloader_cli(uint32_t timeout_ms){
 //命令行指令显示
 void bootloader_cli_help(void){
     u0_printf("Bootloader CLI commands:\r\n");
+    u0_printf(" 输入[0],查看网络配置 \r\n");
     u0_printf(" 输入[1],擦除A区 \r\n");
     u0_printf(" 输入[2],串口IAP下载A区程序 \r\n");
     u0_printf(" 输入[3],设置OTA版本号 \r\n");
@@ -636,6 +635,8 @@ void bootloader_cli_help(void){
     u0_printf(" 输入[5],从内部flash向外部flash搬运程序<存储> \r\n");
     u0_printf(" 输入[6],从外部flash向内部flash搬运程序<升级> \r\n");
     u0_printf(" 输入[7],软件重启 \r\n");
+    u0_printf(" 输入[8 SSID,PASSWORD],配置WiFi \r\n");
+    u0_printf(" 输入[9 HOST,PORT,ID,USER,PASS],配置MQTT \r\n");
 }
 /*---------------------------------------------------------------------------
  * boot_apply_update
@@ -1086,12 +1087,149 @@ static void cmd_restore_from_external(void){
 }
 
 /*============================================================================
+ *                     功能8: 配置 WiFi  格式: 8 SSID,PASSWORD
+ *===========================================================================*/
+static void cmd_set_wifi(uint8_t *data, uint16_t len){
+    /* 跳过命令字符 '8' 和可能的空格 */
+    uint8_t *p = data + 1;
+    uint16_t remain = len - 1;
+    while (remain > 0 && *p == ' ') { p++; remain--; }
+
+    if (remain == 0) {
+        u0_printf("Usage: 8 SSID,PASSWORD\r\n");
+        u0_printf("  Example: 8 MyWiFi,12345678\r\n");
+        return;
+    }
+
+    /* 找逗号分隔符 */
+    char *comma = (char*)memchr(p, ',', remain);
+    if (!comma) {
+        u0_printf("Error: use comma to separate SSID and password\r\n");
+        u0_printf("Usage: 8 SSID,PASSWORD\r\n");
+        return;
+    }
+
+    uint16_t ssid_len = (uint16_t)(comma - (char*)p);
+    uint16_t pass_len = remain - ssid_len - 1;
+
+    if (ssid_len == 0 || ssid_len > 32) {
+        u0_printf("Error: SSID length must be 1-32\r\n");
+        return;
+    }
+    if (pass_len > 32) {
+        u0_printf("Error: Password length must be 0-32\r\n");
+        return;
+    }
+
+    /* 更新配置 */
+    memset(net_cfg.wifi_ssid, 0, sizeof(net_cfg.wifi_ssid));
+    memset(net_cfg.wifi_pass, 0, sizeof(net_cfg.wifi_pass));
+    memcpy(net_cfg.wifi_ssid, p, ssid_len);
+    memcpy(net_cfg.wifi_pass, comma + 1, pass_len);
+    net_cfg.magic = NET_CFG_MAGIC;
+
+    /* 写入 EEPROM */
+    Net_WriteConfig(&net_cfg);
+    u0_printf("WiFi config saved: SSID=%s\r\n", net_cfg.wifi_ssid);
+}
+
+/*============================================================================
+ *                     功能9: 配置 MQTT  格式: 9 HOST,PORT,CLIENT_ID,USER,PASS
+ *===========================================================================*/
+static void cmd_set_mqtt(uint8_t *data, uint16_t len){
+    /* 跳过命令字符 '9' 和可能的空格 */
+    uint8_t *p = data + 1;
+    uint16_t remain = len - 1;
+    while (remain > 0 && *p == ' ') { p++; remain--; }
+
+    if (remain == 0) {
+        u0_printf("Usage: 9 HOST,PORT,CLIENT_ID,USER,PASS\r\n");
+        u0_printf("  Example: 9 192.168.1.100,1883,ESP8266,admin,public\r\n");
+        return;
+    }
+
+    /* 解析 5 个逗号分隔字段 */
+    char *fields[5];
+    uint16_t field_lens[5];
+    char *start = (char*)p;
+    uint8_t field_count = 0;
+
+    for (uint16_t i = 0; i <= remain && field_count < 5; i++) {
+        if (i == remain || p[i] == ',') {
+            fields[field_count] = start;
+            field_lens[field_count] = (uint16_t)((char*)&p[i] - start);
+            start = (char*)&p[i + 1];
+            field_count++;
+        }
+    }
+
+    if (field_count < 5) {
+        u0_printf("Error: need 5 fields: HOST,PORT,CLIENT_ID,USER,PASS\r\n");
+        u0_printf("Usage: 9 192.168.1.100,1883,ESP8266,admin,public\r\n");
+        return;
+    }
+
+    /* 校验字段长度 */
+    if (field_lens[0] == 0 || field_lens[0] > 32) {
+        u0_printf("Error: HOST length must be 1-32\r\n"); return;
+    }
+    if (field_lens[2] > 16) {
+        u0_printf("Error: CLIENT_ID length must be 0-16\r\n"); return;
+    }
+    if (field_lens[3] > 16) {
+        u0_printf("Error: USER length must be 0-16\r\n"); return;
+    }
+    if (field_lens[4] > 16) {
+        u0_printf("Error: PASS length must be 0-16\r\n"); return;
+    }
+
+    /* 解析端口号 */
+    uint32_t port = 0;
+    for (uint16_t i = 0; i < field_lens[1]; i++) {
+        if (fields[1][i] < '0' || fields[1][i] > '9') {
+            u0_printf("Error: Invalid port number\r\n"); return;
+        }
+        port = port * 10 + (fields[1][i] - '0');
+    }
+    if (port == 0 || port > 65535) {
+        u0_printf("Error: Port must be 1-65535\r\n"); return;
+    }
+
+    /* 更新配置 */
+    memset(net_cfg.mqtt_host, 0, sizeof(net_cfg.mqtt_host));
+    memset(net_cfg.mqtt_client_id, 0, sizeof(net_cfg.mqtt_client_id));
+    memset(net_cfg.mqtt_user, 0, sizeof(net_cfg.mqtt_user));
+    memset(net_cfg.mqtt_pass, 0, sizeof(net_cfg.mqtt_pass));
+
+    memcpy(net_cfg.mqtt_host, fields[0], field_lens[0]);
+    net_cfg.mqtt_port = (uint16_t)port;
+    memcpy(net_cfg.mqtt_client_id, fields[2], field_lens[2]);
+    memcpy(net_cfg.mqtt_user, fields[3], field_lens[3]);
+    memcpy(net_cfg.mqtt_pass, fields[4], field_lens[4]);
+    net_cfg.magic = NET_CFG_MAGIC;
+
+    /* 写入 EEPROM */
+    Net_WriteConfig(&net_cfg);
+    u0_printf("MQTT config saved: %s:%u client=%s\r\n",
+              net_cfg.mqtt_host, net_cfg.mqtt_port, net_cfg.mqtt_client_id);
+}
+
+/*============================================================================
  *                     CLI命令分发函数
  *===========================================================================*/
 void bootloader_cli_event(uint8_t *data, uint16_t len){
     if(len == 0) return;
 
+    /* 去除串口助手附带的尾部 \r \n 空格 */
+    while (len > 1 && (data[len - 1] == '\r' || data[len - 1] == '\n' || data[len - 1] == ' ')) {
+        len--;
+    }
+
     switch(data[0]){
+        case '0':
+            Net_ShowConfig(&net_cfg);
+            break;
+
         case '1':
             cmd_erase_app_flash();
             break;
@@ -1128,10 +1266,19 @@ void bootloader_cli_event(uint8_t *data, uint16_t len){
             break;
 
         case '8':
+            cmd_set_wifi(data, len);
+            break;
+
+        case '9':
+            cmd_set_mqtt(data, len);
+            break;
+
+        case 'd':
+        case 'D':
             u0_printf("Dump APP header...\r\n");
             dump_app_header();
             break;
-            
+
         case 'h':
         case 'H':
         case '?':

@@ -56,7 +56,7 @@ OF SUCH DAMAGE.
 #include "gd25q40e.h"
 #include "fmc.h"
 #include "boot.h"
-#include "esp8266.h"
+#include "net_config.h"
 
 
 

@@ -3,11 +3,12 @@
         {
             "name": "GD32F470",
             "includePath": [
-                "${workspaceFolder}/User",
-                "${workspaceFolder}/Driver/CMSIS/Include",
-                "${workspaceFolder}/Driver/SYSTEM/Include",
-                "${workspaceFolder}/Driver/BSP/Include",
-                "${workspaceFolder}/Driver/LIB/Include"
+                "${workspaceFolder}/boot",
+                "${workspaceFolder}/app",
+                "${workspaceFolder}/shared/CMSIS/Include",
+                "${workspaceFolder}/shared/SYSTEM/Include",
+                "${workspaceFolder}/shared/BSP/Include",
+                "${workspaceFolder}/shared/LIB/Include"
             ],
             "defines": [
                 "GD32F470",

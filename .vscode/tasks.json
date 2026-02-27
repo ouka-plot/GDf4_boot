@@ -1,120 +1,118 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // ==================== Boot 构建 ====================
         {
-            "label": "Docker-CMake-Configure",
+            "label": "Boot-CMake-Configure",
             "type": "shell",
-            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env cmake -BOutput -GNinja",
+            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env cmake -S boot -B build_boot -GNinja",
             "group": "build",
             "problemMatcher": []
         },
         {
-            "label": "Docker-Ninja-Build",
+            "label": "Boot-Build",
             "type": "shell",
-            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env ninja -C Output",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
+            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env ninja -C build_boot",
+            "group": "build",
             "problemMatcher": {
                 "owner": "cpp",
-                "fileLocation": [
-                    "autoDetect",
-                    "${workspaceFolder}"
-                ],
+                "fileLocation": ["autoDetect", "${workspaceFolder}"],
                 "pattern": {
                     "regexp": "^/app/(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3,
-                    "severity": 4,
-                    "message": 5
+                    "file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
                 }
             }
         },
         {
-            "label": "Clean Output",
+            "label": "Flash-Boot",
             "type": "shell",
-            "command": "Remove-Item -Recurse -Force Output/*",
-            "problemMatcher": []
-        },
-        {
-            "label": "Flash-Device",
-            "type": "shell",
-            "command": ".\\flash.bat",
+            "command": ".\\flash_boot.bat",
             "group": "build",
-            "dependsOn": [
-                "Docker-Ninja-Build"
-            ],
+            "dependsOn": ["Boot-Build"],
+            "problemMatcher": []
+        },
+        // ==================== APP 构建 ====================
+        {
+            "label": "App-CMake-Configure",
+            "type": "shell",
+            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env cmake -S app -B build_app -GNinja",
+            "group": "build",
             "problemMatcher": []
         },
         {
-            "label": "🚀 一键构建烧录",
-            "dependsOn": [
-                "Flash-Device"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "label": "App-Build",
+            "type": "shell",
+            "command": "docker run --rm -v \"${workspaceFolder}:/app\" gd32-env ninja -C build_app",
+            "group": "build",
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["autoDetect", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^/app/(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
+                }
+            }
+        },
+        {
+            "label": "Flash-App",
+            "type": "shell",
+            "command": ".\\flash_app.bat",
+            "group": "build",
+            "dependsOn": ["App-Build"],
+            "problemMatcher": []
+        },
+        // ==================== 组合任务 ====================
+        {
+            "label": "🚀 Boot: 构建+烧录",
+            "dependsOn": ["Flash-Boot"],
+            "group": { "kind": "build", "isDefault": true },
             "problemMatcher": []
         },
         {
-            "label": "🔄 完整重建烧录",
-            "dependsOn": [
-                "Docker-CMake-Configure",
-                "Docker-Ninja-Build",
-                "Flash-Device"
-            ],
+            "label": "🚀 App: 构建+烧录",
+            "dependsOn": ["Flash-App"],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "🔄 Boot: 完整重建+烧录",
+            "dependsOn": ["Boot-CMake-Configure", "Boot-Build", "Flash-Boot"],
             "dependsOrder": "sequence",
             "group": "build",
             "problemMatcher": []
         },
         {
+            "label": "🔄 App: 完整重建+烧录",
+            "dependsOn": ["App-CMake-Configure", "App-Build", "Flash-App"],
+            "dependsOrder": "sequence",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean All",
+            "type": "shell",
+            "command": "Remove-Item -Recurse -Force build_boot/*, build_app/* -ErrorAction SilentlyContinue",
+            "problemMatcher": []
+        },
+        // ==================== 本地调试工具 ====================
+        {
             "type": "cppbuild",
             "label": "C/C++: gcc.exe 生成活动文件",
             "command": "D:\\software\\x86_64-15.1.0-release-win32-seh-msvcrt-rt_v12-rev0\\mingw64\\bin\\gcc.exe",
-            "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
+            "args": ["-fdiagnostics-color=always", "-g", "${file}", "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe"],
+            "options": { "cwd": "${fileDirname}" },
+            "problemMatcher": ["$gcc"],
+            "group": { "kind": "build", "isDefault": false },
             "detail": "调试器生成的任务。"
         },
         {
             "type": "cppbuild",
             "label": "C/C++: cl.exe 生成活动文件",
             "command": "cl.exe",
-            "args": [
-                "/Zi",
-                "/EHsc",
-                "/nologo",
-                "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "${file}"
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$msCompile",
-                "$gcc"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
+            "args": ["/Zi", "/EHsc", "/nologo", "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe", "${file}"],
+            "options": { "cwd": "${fileDirname}" },
+            "problemMatcher": ["$msCompile", "$gcc"],
+            "group": { "kind": "build", "isDefault": false },
             "detail": "调试器生成的任务。"
         }
     ]

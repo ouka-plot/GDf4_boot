@@ -18,6 +18,7 @@
 uint8_t AT24_write_page(uint16_t addr,uint8_t *databuf,uint16_t datalen );
 uint8_t AT24_read_page(uint16_t addr,uint8_t *databuf,uint16_t datalen );
 uint8_t AT24_write_byte(uint8_t addr,uint8_t data);
+uint8_t AT24_write_bytes(uint16_t addr, const uint8_t *data, uint16_t len);
 void AT24_ReadOTAInfo(void);
 void AT24_WriteOTAInfo(void);
 

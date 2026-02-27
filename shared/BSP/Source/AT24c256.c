@@ -1,7 +1,12 @@
 #include "AT24c256.h"
 #include "iic.h"
-#include "boot.h"
+#include "ota_types.h"
 #include "string.h"
+
+/* OTA 信息全局变量 (定义在此处，Boot 和 APP 均编译 AT24c256.c) */
+OTA_InfoCB  ota_info   = {0};
+OTA_Header  ota_header = {0};
+
 uint8_t AT24_write_byte(uint8_t addr,uint8_t data){
 
 	
@@ -60,6 +65,20 @@ uint8_t AT24_read_page(uint16_t addr,uint8_t *databuf,uint16_t datalen ){
 	 iic_stop();
 	 delay_ms(5);
 	 return 0;
+}
+
+/*  跨页写入: 自动处理 AT24C256 64-byte 页边界 */
+uint8_t AT24_write_bytes(uint16_t addr, const uint8_t *data, uint16_t len) {
+    while (len > 0) {
+        uint16_t page_remain = 64 - (addr % 64);   /* 当前页剩余空间 */
+        uint16_t chunk = (len < page_remain) ? len : page_remain;
+        uint8_t ret = AT24_write_page(addr, (uint8_t*)data, chunk);
+        if (ret != 0) return ret;
+        addr += chunk;
+        data += chunk;
+        len  -= chunk;
+    }
+    return 0;
 }
 
 void AT24_ReadOTAInfo(void){

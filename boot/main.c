@@ -36,39 +36,57 @@ OF SUCH DAMAGE.
 #include "main.h"
 
 
-
-
 int main(void){
-	usart0_init(921600);
-	u0_printf("%d %c %x",0x30,0x30,0x30);
-	systick_config();    // 先配置 SysTick 1kHz 中断，delay_1ms/delay_ms 依赖它
-	delay_init();        // 初始化 DWT 周期计数器，delay_us 依赖它（不再占用 SysTick）
-	iic_init();
-	gd25q40e_init();
-	usart1_init(115200);
-	AT24_ReadOTAInfo();
-    ESP8266_Init();
-	bootloader_branch();
-     
+    /* ===== Phase 1: 核心硬件初始化 ===== */
+    usart0_init(921600);
+    systick_config();
+    delay_init();
+    iic_init();
 
+    gd25q40e_init();   /* SPI1 + GD25Q40E: CLI 命令 5/6 需要 */
 
-  
+    u0_printf("[BOOT] GD32F470 Bootloader started\r\n");
 
-	while(1) 
-    {
-        /* 轮询 USART1 接收的 MQTT 推送，驱动 OTA 状态机 */
-        mqtt_ota_poll();
+    /* ===== Phase 2: 读 EEPROM OTA 标志 ===== */
+    AT24_ReadOTAInfo();
 
-        /* 处理 USART0 调试命令 */
-        if (u0_ucb.out != u0_ucb.in) {
-            u0_ucb.out++;
-            if (u0_ucb.out > u0_ucb.end) {
-                u0_ucb.out = &u0_ucb.uart_infro_buf[0];
-            }
+    /* ===== Phase 3: OTA 搬运 (外部Flash→内部Flash) ===== */
+    if (ota_info.boot_flag == BOOT_FLAG_SET) {
+        u0_printf("[BOOT] OTA flag set, applying update...\r\n");
+        uint8_t ret = boot_apply_update();
+        if (ret == 0) {
+            u0_printf("[BOOT] OTA update OK\r\n");
+            ota_info.boot_flag = 0;
+            AT24_WriteOTAInfo();
+        } else {
+            u0_printf("[BOOT] OTA update FAIL (code %d)\r\n", ret);
         }
-
-        delay_ms(5);
+        jump2app(APP_ADDR);
     }
+
+    /* ===== Phase 4: CLI 窗口 2s (按 'w' 进入) ===== */
+    if (bootloader_cli(2000) == 0) {
+        bootloader_cli_help();
+        while (1) {
+            if (u0_ucb.out != u0_ucb.in) {
+                uart_rxbuff_ptr *cur = (uart_rxbuff_ptr *)u0_ucb.out;
+                uint16_t len = cur->ed - cur->st + 1;
+                bootloader_cli_event(cur->st, len);
+                u0_ucb.out++;
+                if (u0_ucb.out > u0_ucb.end) {
+                    u0_ucb.out = &u0_ucb.uart_infro_buf[0];
+                }
+            }
+            delay_ms(5);
+        }
+    }
+
+    /* ===== Phase 5: 直接跳转 APP ===== */
+    u0_printf("[BOOT] Jump to APP...\r\n");
+    jump2app(APP_ADDR);
+
+    /* 不可达 */
+    while (1);
 }
 
 

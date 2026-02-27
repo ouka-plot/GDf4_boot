@@ -1,4 +1,8 @@
 #include "esp8266.h"
+#include "mqtt.h"
+#include "AT24c256.h"
+#include "net_config.h"
+#include "ota_types.h"
 
 
 /* ====================================================================
@@ -21,65 +25,55 @@ uint32_t         ota_received   = 0;
 uint32_t         ota_ext_offset = 256;
 uint16_t         ota_page_num   = 1;
 
-void ESP8266_Init(void) {
+/* ========== ESP8266 初始化 (带返回值，不死循环) ========== */
 
-  // 1. 测试 AT（重试 3 次）
-    for (uint8_t retry = 0; retry < 3; retry++) {
-        if(ESP8266_SendCmd("AT\r\n", "OK", 1000)) {
-            u0_printf("ESP8266 Ready!\r\n");
-            break;
-        }
+esp8266_err_t ESP8266_Init(const NetConfig *cfg) {
+    char cmd_buf[160];
+
+    /* 1. AT 测试 (重试 3 次) */
+    uint8_t at_ok = 0;
+    for (uint8_t i = 0; i < 3; i++) {
+        if (ESP8266_SendCmd("AT\r\n", "OK", 1000)) { at_ok = 1; break; }
         delay_ms(500);
     }
-        // 关闭回显 (防止干扰解析)
-    ESP8266_SendCmd("ATE0\r\n", "OK", 500);
-    
-    // 设置 Station 模式
-    ESP8266_SendCmd("AT+CWMODE=1\r\n", "OK", 500);
+    if (!at_ok) {
+        u0_printf("[ESP] AT no response\r\n");
+        return ESP_ERR_AT;
+    }
+    u0_printf("[ESP] ESP8266 Ready\r\n");
 
-    // 2. 连 WiFi
-    // 注意：把引号里的内容换成你的真实 WiFi
-    if(ESP8266_SendCmd("AT+CWJAP=\"Xiaomi Civi 3\",\"12345678\"\r\n", "WIFI GOT IP", 30000)) {
-        u0_printf("WiFi Connected!\r\n");
-    } else {
-        u0_printf("WiFi Connect Failed!\r\n");
-        while(1); // 死循环报错
-    }
-    
-    // 3. 连 MQTT
-    // 先清除残留的 MQTT 连接状态
-    ESP8266_SendCmd("AT+MQTTCLEAN=0\r\n", "OK", 30000);
-    delay_ms(500);
+    ESP8266_SendCmd("ATE0\r\n", "OK", 500);       /* 关回显 */
+    ESP8266_SendCmd("AT+CWMODE=1\r\n", "OK", 500); /* Station 模式 */
 
-    if(ESP8266_SendCmd("AT+MQTTUSERCFG=0,1,\"ESP8266_Test\",\"admin\",\"public\",0,0,\" \"\r\n","OK", 5000)) {
-        u0_printf("config MQTT success\r\n");
-    } else {
-        u0_printf("config MQTT  Failed!\r\n");
-        while(1);
+    /* 2. 连 WiFi */
+    snprintf(cmd_buf, sizeof(cmd_buf),
+             "AT+CWJAP=\"%s\",\"%s\"\r\n", cfg->wifi_ssid, cfg->wifi_pass);
+    if (!ESP8266_SendCmd(cmd_buf, "WIFI GOT IP", 15000)) {
+        u0_printf("[ESP] WiFi connect failed\r\n");
+        return ESP_ERR_WIFI;
     }
-    delay_ms(500);
-    if(ESP8266_SendCmd("AT+MQTTCONN=0,\"192.168.196.74\",1883,0\r\n","OK", 30000)) {
-        u0_printf("MQTT connect success\r\n");
-    } else {
-        u0_printf("MQTT connect Failed!\r\n");
-        while(1);
-    }
-      if(ESP8266_SendCmd("AT+MQTTSUB=0,\"device/ota\",1\r\n","OK", 30000)) {
-        
-        u0_printf("topic success,wait message\r\n");
-    } else {
-        u0_printf("topic Failed!\r\n");
-        while(1); // 死循环报错
+    u0_printf("[ESP] WiFi Connected\r\n");
+
+    /* 3. MQTT 配置 */
+    ESP8266_SendCmd("AT+MQTTCLEAN=0\r\n", "OK", 500);
+    delay_ms(300);
+
+    snprintf(cmd_buf, sizeof(cmd_buf),
+             "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\" \"\r\n",
+             cfg->mqtt_client_id, cfg->mqtt_user, cfg->mqtt_pass);
+    if (!ESP8266_SendCmd(cmd_buf, "OK", 5000)) {
+        u0_printf("[ESP] MQTT config failed\r\n");
+        return ESP_ERR_MQTT_CFG;
     }
 
-    // ... 后续代码
-    
-    
- 
-    u0_printf("[SYS] System ready, waiting for OTA...\r\n");
-
-
-
+    snprintf(cmd_buf, sizeof(cmd_buf),
+             "AT+MQTTCONN=0,\"%s\",%u,0\r\n", cfg->mqtt_host, cfg->mqtt_port);
+    if (!ESP8266_SendCmd(cmd_buf, "OK", 15000)) {
+        u0_printf("[ESP] MQTT connect failed\r\n");
+        return ESP_ERR_MQTT_CONN;
+    }
+    u0_printf("[ESP] MQTT Connected, ready\r\n");
+    return ESP_OK;
 }
 
 /* Hex 字符转半字节 */
@@ -99,46 +93,12 @@ static uint16_t hex_decode(const char *hex, uint16_t hex_len, uint8_t *out) {
     return bin_len;
 }
 
-/**
- * @brief  从 +MQTTSUBRECV 消息中提取 payload 指针
- * @param  frame    帧数据起始
- * @param  frame_len 帧数据长度
- * @param  payload  [out] payload 起始指针
- * @param  pay_len  [out] payload 长度
- * @return 1=成功, 0=不是 MQTTSUBRECV
- *
- * 格式: +MQTTSUBRECV:0,"device/ota",<len>,<payload>
- * 我们找第 3 个逗号后面就是 payload
- */
-static uint8_t parse_mqttsubrecv(const char *frame, uint16_t frame_len,
-                                  const char **payload, uint16_t *pay_len) {
-    /* 快速判断前缀 */
-    if (frame_len < 20) return 0;
-    if (strstr(frame, "+MQTTSUBRECV") == NULL) return 0;
 
-    /* 找第 3 个逗号 */
-    uint8_t comma_count = 0;
-    uint16_t i;
-    for (i = 0; i < frame_len; i++) {
-        if (frame[i] == ',') {
-            comma_count++;
-            if (comma_count == 3) {
-                i++;  /* 跳过逗号本身 */
-                break;
-            }
-        }
-    }
-    if (comma_count < 3 || i >= frame_len) return 0;
-
-    *payload = &frame[i];
-    *pay_len = frame_len - i;
-    return 1;
-}
 
 /**
  * @brief  处理 OTA 起始帧  "OTA:START:<size>"
  */
-static void ota_handle_start(const char *payload, uint16_t len) {
+void ota_handle_start(const char *payload, uint16_t len) {
     /* 解析 "OTA:START:12345" */
     const char *p = payload + 10;  /* 跳过 "OTA:START:" */
     ota_total_size = 0;
@@ -171,7 +131,7 @@ static void ota_handle_start(const char *payload, uint16_t len) {
 /**
  * @brief  处理 OTA 数据帧 (hex 编码的二进制固件分块)
  */
-static void ota_handle_data(const char *payload, uint16_t len) {
+void ota_handle_data(const char *payload, uint16_t len) {
     static uint8_t page_buf[256];
     static uint16_t buf_pos = 0;
 
@@ -206,7 +166,7 @@ static void ota_handle_data(const char *payload, uint16_t len) {
 /**
  * @brief  处理 OTA 结束帧, 写 Header + 置 EEPROM 标志 + 重启
  */
-static void ota_handle_end(void) {
+void ota_handle_end(void) {
     u0_printf("[OTA] Transfer complete, writing header...\r\n");
 
     /* 构造 OTA_Header, 单段: 整个 APP 区 */
@@ -238,54 +198,32 @@ static void ota_handle_end(void) {
 }
 
 /**
- * @brief  主循环中调用: 检查 USART1 是否收到 MQTT 推送并处理
+ * @brief  OTA MQTT 回调 — 注册到 mqtt_subscribe("device/ota", ...)
+ *         根据 OTA 状态机分发起始帧/数据帧/结束帧
  */
-void mqtt_ota_poll(void) {
-    while (u1_ucb.out != u1_ucb.in) {
-        uint16_t len = u1_ucb.out->ed - u1_ucb.out->st + 1;
+void mqtt_ota_callback(const char *topic, const char *payload, uint16_t pay_len)
+{
+    (void)topic;
 
-        /* 安全拷贝到临时缓冲区 */
-        char tmp[512];
-        uint16_t copy_len = (len < sizeof(tmp) - 1) ? len : (sizeof(tmp) - 1);
-        memcpy(tmp, u1_ucb.out->st, copy_len);
-        tmp[copy_len] = '\0';
-
-        /* 消费这一帧 */
-        u1_ucb.out++;
-        if (u1_ucb.out > u1_ucb.end) {
-            u1_ucb.out = &u1_ucb.uart_infro_buf[0];
+    switch (ota_state) {
+    case OTA_IDLE:
+        if (pay_len >= 10 && strncmp(payload, "OTA:START:", 10) == 0) {
+            ota_handle_start(payload, pay_len);
+        } else {
+            u0_printf("[OTA] Unexpected: %.*s\r\n", pay_len, payload);
         }
+        break;
 
-        /* 解析 +MQTTSUBRECV */
-        const char *payload = NULL;
-        uint16_t pay_len = 0;
-        if (!parse_mqttsubrecv(tmp, copy_len, &payload, &pay_len)) {
-            /* 不是 MQTT 推送，打印看看 */
-            u0_printf("[U1] %s\r\n", tmp);
-            continue;
+    case OTA_RECEIVING:
+        if (pay_len >= 7 && strncmp(payload, "OTA:END", 7) == 0) {
+            ota_handle_end();
+        } else {
+            ota_handle_data(payload, pay_len);
         }
+        break;
 
-        /* 根据 OTA 状态机处理 */
-        switch (ota_state) {
-        case OTA_IDLE:
-            if (pay_len >= 10 && strncmp(payload, "OTA:START:", 10) == 0) {
-                ota_handle_start(payload, pay_len);
-            } else {
-                u0_printf("[MQTT] %.*s\r\n", pay_len, payload);
-            }
-            break;
-
-        case OTA_RECEIVING:
-            if (pay_len >= 7 && strncmp(payload, "OTA:END", 7) == 0) {
-                ota_handle_end();
-            } else {
-                ota_handle_data(payload, pay_len);
-            }
-            break;
-
-        default:
-            break;
-        }
+    default:
+        break;
     }
 }
 
@@ -320,6 +258,9 @@ uint8_t ESP8266_SendCmd(char* cmd, char* expect_reply, uint32_t timeout) {
             // 检查是否包含期望字符串
             if (strstr(tmp, expect_reply) != NULL) {
                 return 1;   // 成功
+            }
+             if (strstr(tmp, "ERROR") != NULL&&strcmp(cmd, "AT+MQTTCLEAN=0\r\n") == 0) {
+                return 2;   // 失败
             }
 
             // 没命中，继续消费下一帧

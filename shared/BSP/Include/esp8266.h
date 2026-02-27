@@ -12,7 +12,19 @@
 
 #include "main.h"
 #include "gd32f4xx.h"
-/* OTA 状态机 */
+#include "net_config.h"
+
+/* ========== ESP8266 初始化错误码 ========== */
+typedef enum {
+    ESP_OK = 0,         /* 成功 */
+    ESP_ERR_AT,         /* AT 无响应 */
+    ESP_ERR_WIFI,       /* WiFi 连接失败 */
+    ESP_ERR_MQTT_CFG,   /* MQTT 配置失败 */
+    ESP_ERR_MQTT_CONN,  /* MQTT 连接失败 */
+    ESP_ERR_MQTT_SUB,   /* 订阅失败 */
+} esp8266_err_t;
+
+/* ========== OTA 状态机 ========== */
 typedef enum {
     OTA_IDLE = 0,       /* 等待起始帧 */
     OTA_RECEIVING,      /* 正在接收数据帧 */
@@ -26,8 +38,16 @@ extern uint32_t ota_received;
 extern uint32_t ota_ext_offset;
 extern uint16_t ota_page_num;
 
-void ESP8266_Init(void);
-void mqtt_ota_poll(void);
+/* ESP8266 控制 */
+esp8266_err_t ESP8266_Init(const NetConfig *cfg);
 uint8_t ESP8266_SendCmd(char* cmd, char* expect_reply, uint32_t timeout);
+
+/* OTA 回调 — 注册到 mqtt_subscribe("device/ota", 1, mqtt_ota_callback) */
+void mqtt_ota_callback(const char *topic, const char *payload, uint16_t pay_len);
+
+/* OTA 内部处理函数 (供高级用法直接调用) */
+void ota_handle_start(const char *payload, uint16_t len);
+void ota_handle_data(const char *payload, uint16_t len);
+void ota_handle_end(void);
 
 #endif

@@ -53,6 +53,8 @@ gcc-arm-none-eabi-*/
 
 # Build output
 build/
+build_boot/
+build_app/
 Output/
 
 # Visual Studio / Debug artifacts
