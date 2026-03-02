@@ -1,0 +1,12 @@
+root = true
+
+# 匹配所有文件
+[*]
+charset = utf-8
+
+# 还可以顺便统一缩进和换行符
+indent_style = space
+indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true

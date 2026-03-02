@@ -59,6 +59,7 @@ include_directories(
     ${SHARED_DIR}/SYSTEM/Include
     ${SHARED_DIR}/BSP/Include
     ${SHARED_DIR}/LIB/Include
+    ${CMAKE_SOURCE_DIR}/../HMAC/inc
 )
 
 # -------------------------------------------------------------------------
@@ -85,6 +86,8 @@ file(GLOB_RECURSE SHARED_SOURCES
     # 注意：不编入 boot.c，那是 Bootloader 专用的
 )
 
+file(GLOB HMAC_SOURCES "${CMAKE_SOURCE_DIR}/../HMAC/scr/*.c")
+
 # 启动汇编
 set(STARTUP_FILE "${CMAKE_SOURCE_DIR}/../Project/startup_gd32f450_470.S")
 
@@ -94,6 +97,7 @@ set(STARTUP_FILE "${CMAKE_SOURCE_DIR}/../Project/startup_gd32f450_470.S")
 add_executable(${PROJECT_NAME}.elf
     ${APP_SOURCES}
     ${SHARED_SOURCES}
+    ${HMAC_SOURCES}
     ${STARTUP_FILE}
 )
 

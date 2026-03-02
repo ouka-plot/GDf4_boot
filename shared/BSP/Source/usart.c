@@ -4,17 +4,17 @@
  * @LastEditors: oukaa 3328236081@qq.com
  * @LastEditTime: 2026-01-19 13:39:06
  * @FilePath: \Projectd:\desktop\GDf4_boot\Driver\BSP\Source\usart.c
- * @Description: ÕâÊÇÄ¬ÈÏÉèÖÃ,ÇëÉèÖÃ`customMade`, ´ò¿ªkoroFileHeader²é¿´ÅäÖÃ ½øĞĞÉèÖÃ: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @Description: è¿™æ˜¯é»˜è®¤è®¾ç½®,è¯·è®¾ç½®`customMade`, æ‰“å¼€koroFileHeaderæŸ¥çœ‹é…ç½® è¿›è¡Œè®¾ç½®: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #include "usart.h"
 #include "stdarg.h"
 #include "stdio.h"
 #include "string.h"
 /*
-  1£¬´æÊı¾İµÄÊı×é 2048 uint8_t
-  2.¹ÜÀíÃ¿´æÈëÒ»¸öÊı¾İ¿éµÄuint8_t  st ed Ö¸Õë¡£Í³¼ÆÀÛ¼Æ´æ¶àÉÙÊı¾İÁ¿ uint16_t ´æ½á¹¹Ìå 
-  3.ËùÓĞÊı¾İ¿éÖ¸ÕëµÄ½á¹¹Ìå ´æÈë½á¹¹ÌåÊı×é 
-  4£¬¹ÜÀíÊı×éÄÚ ½á¹¹Ìå£¬´æ È¡µÄÖ¸Õë in out ÒÔ¼°·ÀÖ¹Òç³öµÄendÖ¸Õë
+  1ï¼Œå­˜æ•°æ®çš„æ•°ç»„ 2048 uint8_t
+  2.ç®¡ç†æ¯å­˜å…¥ä¸€ä¸ªæ•°æ®å—çš„uint8_t  st ed æŒ‡é’ˆã€‚ç»Ÿè®¡ç´¯è®¡å­˜å¤šå°‘æ•°æ®é‡ uint16_t å­˜ç»“æ„ä½“ 
+  3.æ‰€æœ‰æ•°æ®å—æŒ‡é’ˆçš„ç»“æ„ä½“ å­˜å…¥ç»“æ„ä½“æ•°ç»„ 
+  4ï¼Œç®¡ç†æ•°ç»„å†… ç»“æ„ä½“ï¼Œå­˜ å–çš„æŒ‡é’ˆ in out ä»¥åŠé˜²æ­¢æº¢å‡ºçš„endæŒ‡é’ˆ
   
 
 */
@@ -27,8 +27,8 @@ volatile uart_ucb u0_ucb;
 
 /*
 
-´®¿Ú³õÊ¼»¯ init dma ÖĞ¶Ï ¿ÕÏĞ
-		  ÏîÄ¿Ê÷Ìí¼Ó¿âÎÄ¼ş rte °üº¬Í·ÎÄ¼şºê¶¨Òå
+ä¸²å£åˆå§‹åŒ– init dma ä¸­æ–­ ç©ºé—²
+		  é¡¹ç›®æ ‘æ·»åŠ åº“æ–‡ä»¶ rte åŒ…å«å¤´æ–‡ä»¶å®å®šä¹‰
 */
 //gpio  PA9  PA10 rcu   GPIOA USART0
 /* reset USART */
@@ -38,7 +38,7 @@ void usart0_init(uint32_t baudrate)
 	rcu_periph_clock_enable(RCU_GPIOA);
 	rcu_periph_clock_enable(RCU_USART0);
 /* set GPIO alternate function */
-	gpio_af_set(GPIOA, GPIO_AF_7, GPIO_PIN_9);     //tx    ¸´ÓÃ ÍÆÃâÊä³ö 50mhz
+	gpio_af_set(GPIOA, GPIO_AF_7, GPIO_PIN_9);     //tx    å¤ç”¨ æ¨å…è¾“å‡º 50mhz
 	gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_9);
 	gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_9);
    
@@ -61,7 +61,7 @@ void usart0_init(uint32_t baudrate)
 //dma
 	usart_dma_receive_config(USART0, USART_RECEIVE_DMA_ENABLE);
 
-//¿ÕÏĞÖĞ¶Ï
+//ç©ºé—²ä¸­æ–­
 	nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
 	nvic_irq_enable(USART0_IRQn,0,0);
 
@@ -78,10 +78,10 @@ void usart0_init(uint32_t baudrate)
 }
 
 
-/*Ö¸Õë³õÊ¼»¯    ÏÈÉùÃ÷       buf st Ö¸ÏòbufÍ· edÔÚ½ÓÊÕÍêÈ·¶¨£¬
-                            ucb countÎª0 
-                            in ÔÚinfro bufÍ· outÔÚinfro bufÍ· endÔÚinfro buf×îºóÒ»¸ö 
-                            infto_buf ÄÚÈİ·Åst 
+/*æŒ‡é’ˆåˆå§‹åŒ–    å…ˆå£°æ˜       buf st æŒ‡å‘bufå¤´ edåœ¨æ¥æ”¶å®Œç¡®å®šï¼Œ
+                            ucb countä¸º0 
+                            in åœ¨infro bufå¤´ outåœ¨infro bufå¤´ endåœ¨infro bufæœ€åä¸€ä¸ª 
+                            infto_buf å†…å®¹æ”¾st 
 */
 void uart_ptr_init(){
 	
@@ -93,7 +93,7 @@ void uart_ptr_init(){
 
 
 }
-//dma ³õÊ¼»¯
+//dma åˆå§‹åŒ–
 void dma_init(){
 	rcu_periph_clock_enable(RCU_DMA1);
 	
@@ -109,7 +109,7 @@ void dma_init(){
     dma1_struct.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
     dma1_struct.circular_mode       = DMA_CIRCULAR_MODE_DISABLE;
     dma1_struct.direction           = DMA_PERIPH_TO_MEMORY;
-    dma1_struct.number              = rx_max+1;   //´«Êä×î´óÖµ +1
+    dma1_struct.number              = rx_max+1;   //ä¼ è¾“æœ€å¤§å€¼ +1
     dma1_struct.priority            = DMA_PRIORITY_HIGH;
 
 	dma_single_data_mode_init(DMA1,DMA_CH2,&dma1_struct) ;
@@ -121,9 +121,9 @@ void dma_init(){
 
 
 }
-//´®¿Ú¿ÕÏĞÖĞ¶Ï´¦Àí rx ½ÓÊÕÊı¾İ in
+//ä¸²å£ç©ºé—²ä¸­æ–­å¤„ç† rx æ¥æ”¶æ•°æ® in
 
-//printf±àĞ´ 
+//printfç¼–å†™ 
 void u0_printf(char *format,...){
 
 	uint16_t i;
@@ -139,25 +139,25 @@ void u0_printf(char *format,...){
 	
 	}
 
-while(usart_flag_get(USART0,USART_FLAG_TBE)!=1);  //´«Êä»º³åÇøÎª¿Õ
+while(usart_flag_get(USART0,USART_FLAG_TBE)!=1);  //ä¼ è¾“ç¼“å†²åŒºä¸ºç©º
 
 
 }
 
-//main tx´¦ÀíÊı¾İ ->printf out
+//main txå¤„ç†æ•°æ® ->printf out
 
 
 /* ====================================================================
- *  USART1  PD5(TX) / PD6(RX) ¡ª¡ª Í¨ĞÅ´®¿Ú (Èç ESP8266)
- *  DMA0_CH5, sub-peripheral 4, Normal Ä£Ê½
- *  ÍêÈ«½è¼ø USART0 µÄ DMA+¿ÕÏĞÖĞ¶Ï + UCB »·ĞÎ¹ÜÀí
+ *  USART1  PD5(TX) / PD6(RX) â€”â€” é€šä¿¡ä¸²å£ (å¦‚ ESP8266)
+ *  DMA0_CH5, sub-peripheral 4, Normal æ¨¡å¼
+ *  å®Œå…¨å€Ÿé‰´ USART0 çš„ DMA+ç©ºé—²ä¸­æ–­ + UCB ç¯å½¢ç®¡ç†
  * ==================================================================== */
 
 uint8_t  u1_rxbuf[u1_rx_bufmax];
 uint8_t  u1_txbuf[u1_tx_bufmax];
 volatile uart_ucb u1_ucb;
 
-/* USART1 DMA ³õÊ¼»¯  ¡ª¡ª DMA0_CH5, SUBPERI4 */
+/* USART1 DMA åˆå§‹åŒ–  â€”â€” DMA0_CH5, SUBPERI4 */
 void u1_dma_init(void)
 {
 	rcu_periph_clock_enable(RCU_DMA0);
@@ -173,7 +173,7 @@ void u1_dma_init(void)
 	dma0_struct.periph_memory_width = DMA_PERIPH_WIDTH_8BIT;
 	dma0_struct.circular_mode       = DMA_CIRCULAR_MODE_DISABLE;
 	dma0_struct.direction           = DMA_PERIPH_TO_MEMORY;
-	dma0_struct.number              = u1_rx_max + 1;   /* ºÍ USART0 Ò»Ñù +1 */
+	dma0_struct.number              = u1_rx_max + 1;   /* å’Œ USART0 ä¸€æ · +1 */
 	dma0_struct.priority            = DMA_PRIORITY_HIGH;
 
 	dma_single_data_mode_init(DMA0, DMA_CH5, &dma0_struct);
@@ -182,7 +182,7 @@ void u1_dma_init(void)
 	dma_channel_enable(DMA0, DMA_CH5);
 }
 
-/* USART1 UCB Ö¸Õë³õÊ¼»¯ */
+/* USART1 UCB æŒ‡é’ˆåˆå§‹åŒ– */
 void u1_uart_ptr_init(void)
 {
 	u1_ucb.totol_date = 0;
@@ -192,14 +192,14 @@ void u1_uart_ptr_init(void)
 	u1_ucb.in->st = u1_rxbuf;
 }
 
-/* USART1 ³õÊ¼»¯  PD5(TX) PD6(RX) AF7 */
+/* USART1 åˆå§‹åŒ–  PD5(TX) PD6(RX) AF7 */
 void usart1_init(uint32_t baudrate)
 {
-	/* Ê±ÖÓ */
+	/* æ—¶é’Ÿ */
 	rcu_periph_clock_enable(RCU_GPIOD);
 	rcu_periph_clock_enable(RCU_USART1);
 
-	/* GPIO: PD5=TX ÍÆÍì¸´ÓÃ, PD6=RX ¸´ÓÃÉÏÀ­ */
+	/* GPIO: PD5=TX æ¨æŒ½å¤ç”¨, PD6=RX å¤ç”¨ä¸Šæ‹‰ */
 	gpio_af_set(GPIOD, GPIO_AF_7, GPIO_PIN_5);
 	gpio_mode_set(GPIOD, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_5);
 	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_5);
@@ -208,7 +208,7 @@ void usart1_init(uint32_t baudrate)
 	gpio_mode_set(GPIOD, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_6);
 	gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
 
-	/* USART ÅäÖÃ */
+	/* USART é…ç½® */
 	usart_deinit(USART1);
 	usart_baudrate_set(USART1, baudrate);
 	usart_parity_config(USART1, USART_PM_NONE);
@@ -217,11 +217,11 @@ void usart1_init(uint32_t baudrate)
 	usart_transmit_config(USART1, USART_TRANSMIT_ENABLE);
 	usart_receive_config(USART1, USART_RECEIVE_ENABLE);
 
-	/* DMA ½ÓÊÕ */
+	/* DMA æ¥æ”¶ */
 	usart_dma_receive_config(USART1, USART_RECEIVE_DMA_ENABLE);
 
-	/* ¿ÕÏĞÖĞ¶Ï */
-	nvic_irq_enable(USART1_IRQn, 1, 0);           /* ÓÅÏÈ¼¶ÂÔµÍÓÚ USART0(0,0) */
+	/* ç©ºé—²ä¸­æ–­ */
+	nvic_irq_enable(USART1_IRQn, 1, 0);           /* ä¼˜å…ˆçº§ç•¥ä½äº USART0(0,0) */
 	usart_interrupt_enable(USART1, USART_INT_IDLE);
 
 	u1_dma_init();
@@ -230,7 +230,7 @@ void usart1_init(uint32_t baudrate)
 	usart_enable(USART1);
 }
 
-/* USART1 ¸ñÊ½»¯´òÓ¡ */
+/* USART1 æ ¼å¼åŒ–æ‰“å° */
 void u1_printf(char *format, ...)
 {
 	uint16_t i;
@@ -247,7 +247,7 @@ void u1_printf(char *format, ...)
 	while (usart_flag_get(USART1, USART_FLAG_TBE) != 1);
 }
 
-/* ×èÈûÊ½·¢ËÍ n ×Ö½Ú */
+/* é˜»å¡å¼å‘é€ n å­—èŠ‚ */
 void u1_send_bytes(const uint8_t *data, uint16_t len)
 {
 	for (uint16_t i = 0; i < len; i++) {
@@ -257,7 +257,7 @@ void u1_send_bytes(const uint8_t *data, uint16_t len)
 	while (usart_flag_get(USART1, USART_FLAG_TC) != 1);
 }
 
-/* ·¢ËÍÒÔ '\0' ½áÎ²µÄ×Ö·û´® */
+/* å‘é€ä»¥ '\0' ç»“å°¾çš„å­—ç¬¦ä¸² */
 void u1_send_string(const char *str)
 {
 	while (*str) {

@@ -37,20 +37,20 @@ OF SUCH DAMAGE.
 
 
 int main(void){
-    /* ===== Phase 1: ºËĞÄÓ²¼ş³õÊ¼»¯ ===== */
+    /* ===== Phase 1: æ ¸å¿ƒç¡¬ä»¶åˆå§‹åŒ– ===== */
     usart0_init(921600);
     systick_config();
     delay_init();
     iic_init();
 
-    gd25q40e_init();   /* SPI1 + GD25Q40E: CLI ÃüÁî 5/6 ĞèÒª */
+    gd25q40e_init();   /* SPI1 + GD25Q40E: CLI å‘½ä»¤ 5/6 éœ€è¦ */
 
     u0_printf("[BOOT] GD32F470 Bootloader started\r\n");
 
-    /* ===== Phase 2: ¶Á EEPROM OTA ±êÖ¾ ===== */
+    /* ===== Phase 2: è¯» EEPROM OTA æ ‡å¿— ===== */
     AT24_ReadOTAInfo();
 
-    /* ===== Phase 3: OTA °áÔË (Íâ²¿Flash¡úÄÚ²¿Flash) ===== */
+    /* ===== Phase 3: OTA æ¬è¿ (å¤–éƒ¨Flashâ†’å†…éƒ¨Flash) ===== */
     if (ota_info.boot_flag == BOOT_FLAG_SET) {
         u0_printf("[BOOT] OTA flag set, applying update...\r\n");
         uint8_t ret = boot_apply_update();
@@ -64,7 +64,7 @@ int main(void){
         jump2app(APP_ADDR);
     }
 
-    /* ===== Phase 4: CLI ´°¿Ú 2s (°´ 'w' ½øÈë) ===== */
+    /* ===== Phase 4: CLI çª—å£ 2s (æŒ‰ 'w' è¿›å…¥) ===== */
     if (bootloader_cli(2000) == 0) {
         bootloader_cli_help();
         while (1) {
@@ -81,11 +81,11 @@ int main(void){
         }
     }
 
-    /* ===== Phase 5: Ö±½ÓÌø×ª APP ===== */
+    /* ===== Phase 5: ç›´æ¥è·³è½¬ APP ===== */
     u0_printf("[BOOT] Jump to APP...\r\n");
     jump2app(APP_ADDR);
 
-    /* ²»¿É´ï */
+    /* ä¸å¯è¾¾ */
     while (1);
 }
 

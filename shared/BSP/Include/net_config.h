@@ -1,37 +1,93 @@
+/*
+ * @Author: oukaa 3328236081@qq.com
+ * @Date: 2026-02-26 01:25:05
+ * @LastEditors: oukaa 3328236081@qq.com
+ * @LastEditTime: 2026-02-28 17:00:53
+ * @FilePath: \GDf4_boot\shared\BSP\Include\net_config.h
+ * @Description: 锟斤拷锟斤拷默锟斤拷锟斤拷锟斤拷,锟斤拷锟斤拷锟斤拷`customMade`, 锟斤拷koroFileHeader锟介看锟斤拷锟斤拷 锟斤拷锟斤拷锟斤拷锟斤拷: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
  * @file   net_config.h
- * @brief  网络配置结构体 + EEPROM 持久化
+ * @brief  锟斤拷锟斤拷锟斤拷锟矫结构锟斤拷 + EEPROM 锟街久伙拷
  *
- * 独立于 ESP8266 驱动，Boot 和 APP 均可使用。
- * Boot CLI 用来写入/读取配置，APP 用来读取后传给 ESP8266_Init()。
+ * 锟斤拷锟斤拷锟斤拷 ESP8266 锟斤拷锟斤拷锟斤拷Boot 锟斤拷 APP 锟斤拷锟斤拷使锟矫★拷
+ * Boot CLI 锟斤拷锟斤拷写锟斤拷/锟斤拷取锟斤拷锟矫ｏ拷APP 锟斤拷锟斤拷锟斤拷取锟襟传革拷 ESP8266_Init()锟斤拷
  */
 #ifndef __NET_CONFIG_H__
 #define __NET_CONFIG_H__
 
 #include "gd32f4xx.h"
+#include "mqtt.h" // 锟皆讹拷锟睫革拷锟斤拷锟斤拷锟斤拷 MQTT_CB 锟斤拷锟酵讹拷锟斤拷
 #include <stdint.h>
 
-/* ========== 网络配置结构体 (存 EEPROM) ========== */
-#define NET_CFG_ADDR    0x0040U         /* EEPROM 起始地址 (避开 OTA 信息区) */
-#define NET_CFG_MAGIC   0xCF55CF55U     /* 有效标识 */
+#define DeviceName "device"
+#define ProductID "0qK3k8n0M2"
+#define DeviceKey "ME9KN21xNUd5UkNpN2M2U3ZFQmNJN3hkUk9CVkpqNHo="
+#define UNIX "1893456000"
+
+#define Accesskey                                                              \
+  "xH10xNL/x7X/hftWboDdE9LO+crC1/nbRSJpj403mtVi7vQUpKlajUPxw/PHJqpt"
+#define USERID "412690"
+
+// 锟斤拷锟斤拷锟斤拷IP+锟剿口猴拷
+#define IPADDR "mqtts.heclouds.com"
+#define PORTNUMBER "1883"  /* OneNET 使锟斤拷 TLS over 1883 */
+/* OneNET Topics */
+#define ONENET_TOPIC_PROP_POST        "$sys/0qK3k8n0M2/device/thing/property/post"
+#define ONENET_TOPIC_PROP_SET         "$sys/0qK3k8n0M2/device/thing/property/set"
+#define ONENET_TOPIC_PROP_SET_REPLY   "$sys/0qK3k8n0M2/device/thing/property/set_reply"
+#define ONENET_TOPIC_PROP_REPLY       "$sys/0qK3k8n0M2/device/thing/property/post_reply"
+#define ONENET_TOPIC_CMD              "$sys/0qK3k8n0M2/device/thing/service/invoke"
+#define ONENET_TOPIC_CMD_REPLY        "$sys/0qK3k8n0M2/device/thing/service/invoke_reply"
+// TOKEN_CB锟斤拷锟狡匡拷峁癸拷锟�
+typedef struct TOKEN {
+  uint8_t decodekey[128]; // 锟斤拷锟借备锟斤拷钥锟斤拷锟斤拷base64锟斤拷锟斤拷锟侥斤拷锟�
+  char StringForSignature
+      [256];          // 锟斤拷锟斤拷StringForSignature锟街凤拷锟斤拷锟侥斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟轿拷锟斤拷锟�
+  char signtemp[128]; // sign锟斤拷锟斤拷锟斤拷时锟斤拷锟斤拷锟斤拷
+  char sign[128];     // sign锟斤拷锟斤拷锟秸斤拷锟�
+  char res[128];      // 锟斤拷锟絩es锟斤拷锟街凤拷锟斤拷
+  char signURL[128];  // sign锟斤拷锟斤拷URL锟斤拷锟斤拷锟侥斤拷锟�
+  char resURL[128];   // res锟斤拷锟斤拷URL锟斤拷锟斤拷锟侥斤拷锟�
+
+} TOKEN_CB;
+
+// MQTT_CB 鎺у埗鍧楃粨鏋勪綋
+typedef struct {
+  char client_id[33];   /* MQTT Client ID */
+  char user_name[256];  /* MQTT Username */
+  char pass_word[256];  /* MQTT Password */
+  uint32_t MessageID;   /* Message ID counter */
+} MQTT_CB;
+
+extern MQTT_CB mqtt; // 全锟斤拷锟斤拷锟矫ｏ拷实锟绞讹拷锟斤拷锟斤拷 net_config.c
+
+/* ========== 锟斤拷锟斤拷锟斤拷锟矫结构锟斤拷 (锟斤拷 EEPROM) ========== */
+#define NET_CFG_ADDR 0x0040U      /* EEPROM 锟斤拷始锟斤拷址 (锟杰匡拷 OTA 锟斤拷息锟斤拷) */
+#define NET_CFG_MAGIC 0xCF55CF55U /* 锟斤拷效锟斤拷识 */
 
 typedef struct __attribute__((packed)) {
-    uint32_t magic;              /* NET_CFG_MAGIC = 配置有效 */
-    char     wifi_ssid[33];      /* SSID  max 32 + '\0'      */
-    char     wifi_pass[33];      /* 密码  max 32 + '\0'      */
-    char     mqtt_host[33];      /* 主机  max 32 + '\0'      */
-    uint16_t mqtt_port;          /* 端口  默认 1883          */
-    char     mqtt_client_id[17]; /* ClientID max 16 + '\0'   */
-    char     mqtt_user[17];      /* 用户名  max 16 + '\0'    */
-    char     mqtt_pass[17];      /* 密码    max 16 + '\0'    */
-} NetConfig;                     /* 156 bytes packed          */
+  uint32_t magic;          /* NET_CFG_MAGIC = 锟斤拷锟斤拷锟斤拷效 */
+  char wifi_ssid[33];      /* SSID  max 32 + '\0'      */
+  char wifi_pass[33];      /* 锟斤拷锟斤拷  max 32 + '\0'      */
+  char mqtt_host[33];      /* 锟斤拷锟斤拷  max 32 + '\0'      */
+  uint16_t mqtt_port;      /* 锟剿匡拷  默锟斤拷 1883          */
+  char mqtt_client_id[33]; /* ClientID max 16 + '\0'   */
+  char mqtt_user[256];      /* 锟矫伙拷锟斤拷  max 16 + '\0'    */
+  char mqtt_pass[256];      /* 锟斤拷锟斤拷    max 16 + '\0'    */
+} NetConfig;               /* 156 bytes packed          */
 
 #define NET_CFG_SIZE sizeof(NetConfig)
 
-/* 全局实例 */
+/* 全锟斤拷实锟斤拷 */
 extern NetConfig net_cfg;
 
-/* EEPROM 读写 */
+void URL_Encode(char *data, int data_len, char *outdata);
+void password_Init(void);
+// 锟斤拷锟斤拷锟斤拷锟介：
+// base64_encode((unsigned char *)token.signtemp, token.sign, 20);
+// 锟斤拷要锟斤拷 strlen(token.signtemp)
+/* EEPROM 锟斤拷写 */
 void Net_ReadConfig(NetConfig *cfg);
 void Net_WriteConfig(const NetConfig *cfg);
 void Net_ShowConfig(const NetConfig *cfg);

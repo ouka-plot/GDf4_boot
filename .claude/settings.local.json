@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python verify_token.py)",
+      "Bash(grep -n \"base64_encode\" shared/BSP/Include/*.h HMAC/inc/*.h)",
+      "Bash(ls -la build_app/*.o)",
+      "Bash(docker run --rm -v \"/d/desktop/GDf4_boot/GDf4_boot/GDf4_boot:/app\" gd32-env sh -c \"ls /app | head -10\")"
+    ]
+  }
+}

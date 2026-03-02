@@ -21,12 +21,12 @@ void spi1_init(){
 	
 	spi_parameter_struct spi1_struct;
 	spi1_struct.device_mode          = SPI_MASTER;
-    spi1_struct.trans_mode           = SPI_TRANSMODE_FULLDUPLEX;   //Ë«ÏßÈ«Ë«¹¤
+    spi1_struct.trans_mode           = SPI_TRANSMODE_FULLDUPLEX;   //åŒçº¿å…¨åŒå·¥
     spi1_struct.frame_size           = SPI_FRAMESIZE_8BIT;
     spi1_struct.nss                  = SPI_NSS_SOFT;
     spi1_struct.clock_polarity_phase = SPI_CK_PL_LOW_PH_1EDGE;
     spi1_struct.prescale             = SPI_PSC_2; //30mhz
-    spi1_struct.endian               = SPI_ENDIAN_MSB; //´ó¶ËĞò
+    spi1_struct.endian               = SPI_ENDIAN_MSB; //å¤§ç«¯åº
 	
 	 spi_init(SPI1,&spi1_struct);
 	 
@@ -35,10 +35,10 @@ void spi1_init(){
 }
 
 
-//spi È«Ë«¹¤ ÊÕ·¢Í¬²½
+//spi å…¨åŒå·¥ æ”¶å‘åŒæ­¥
 uint16_t spi1_WR(uint16_t data){
 	uint16_t res=0;
-	//Ã»ÓĞ´ïµ½flag¾ÍËÀµÈ
+	//æ²¡æœ‰è¾¾åˆ°flagå°±æ­»ç­‰
 	while(spi_i2s_flag_get(SPI1,SPI_FLAG_TBE)!=1);
 	
 	spi_i2s_data_transmit(SPI1,data);
@@ -52,7 +52,7 @@ uint16_t spi1_WR(uint16_t data){
 }
 
 
-//·¢ uint8_t°æ±¾
+//å‘ uint8_tç‰ˆæœ¬
 void spi1_WriteBytes(uint8_t *buf,uint16_t buflen) {
 	uint16_t i=0;
 	for(i=0;i<buflen;i++)
@@ -64,7 +64,7 @@ void spi1_WriteBytes(uint8_t *buf,uint16_t buflen) {
 }
 
 
-//ÊÕ uint8_t°æ±¾
+//æ”¶ uint8_tç‰ˆæœ¬
 void spi1_ReadBytes(uint8_t *buf,uint16_t buflen) {
 
 	uint16_t i=0;
