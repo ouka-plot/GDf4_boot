@@ -5,7 +5,9 @@
 #include "net_config.h"
 #include "AT24c256.h"
 #include "usart.h"
+#ifdef USE_MQTT_TOKEN
 #include "utils_hmac.h"
+#endif
 #include <string.h>
 #include <stdio.h>
 
@@ -53,6 +55,7 @@ void URL_Encode(char *data, int data_len, char *outdata) {
     outdata[j] = '\0';
 }
 
+#ifdef USE_MQTT_TOKEN
 void password_Init(void) {
     memset(&token, 0, sizeof(token));
     memset(&mqtt, 0, sizeof(mqtt));
@@ -118,4 +121,50 @@ void password_Init(void) {
         if ((i + 1) % 16 == 0) u0_printf("\r\n");
     }
     u0_printf("\r\n");
+
+    /* 生成 HTTP OTA Token (使用与 MQTT 相同的设备级认证) */
+    u0_printf("[DEBUG] Generating HTTP OTA token (device-level auth)...\r\n");
+
+    /* HTTP OTA 使用与 MQTT 相同的 token 格式和凭据 */
+    /* res = products/{ProductID}/devices/{DeviceName} */
+    /* 签名密钥 = DeviceKey (已在上面解码) */
+
+    TOKEN_CB token_ota;
+    memset(&token_ota, 0, sizeof(token_ota));
+
+    /* 复用 MQTT 的解码密钥 */
+    memcpy(token_ota.decodekey, token.decodekey, decode_len);
+
+    /* 构造 res: products/{ProductID}/devices/{DeviceName} */
+    snprintf(token_ota.res, sizeof(token_ota.res),
+             "products/%s/devices/%s", ProductID, DeviceName);
+    u0_printf("[DEBUG] OTA res = %s\r\n", token_ota.res);
+
+    /* 构造签名字符串: {et}\nsha1\n{res}\n2018-10-31 (与 MQTT 格式一致) */
+    snprintf(token_ota.StringForSignature, sizeof(token_ota.StringForSignature),
+             "%s\nsha1\n%s\n2018-10-31", UNIX, token_ota.res);
+    u0_printf("[DEBUG] OTA StringForSignature length = %u\r\n",
+              (unsigned)strlen(token_ota.StringForSignature));
+
+    /* HMAC-SHA1 签名 */
+    utils_hmac_sha1_hex(token_ota.StringForSignature, strlen(token_ota.StringForSignature),
+                       token_ota.signtemp, (char*)token_ota.decodekey, decode_len);
+    u0_printf("[DEBUG] OTA HMAC-SHA1 calculated\r\n");
+
+    /* Base64 编码签名结果 */
+    base64_encode((unsigned char*)token_ota.signtemp, token_ota.sign, 20);
+    u0_printf("[DEBUG] OTA sign = %s\r\n", token_ota.sign);
+
+    /* URL 编码 res 和 sign */
+    URL_Encode(token_ota.res, strlen(token_ota.res), token_ota.resURL);
+    URL_Encode(token_ota.sign, strlen(token_ota.sign), token_ota.signURL);
+
+    /* 构造最终 Token (版本号与 MQTT 一致: 2018-10-31) */
+    snprintf(mqtt.pass_word_ota, sizeof(mqtt.pass_word_ota),
+             "version=2018-10-31&res=%s&et=%s&method=sha1&sign=%s",
+             token_ota.resURL, UNIX, token_ota.signURL);
+
+    u0_printf("[HTTP OTA TOKEN] Length: %u\r\n", (unsigned)strlen(mqtt.pass_word_ota));
+    u0_printf("[HTTP OTA TOKEN] %.100s...\r\n", mqtt.pass_word_ota);
 }
+#endif /* USE_MQTT_TOKEN */

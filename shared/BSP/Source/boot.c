@@ -648,7 +648,22 @@ void bootloader_cli_help(void){
 uint8_t boot_apply_update(void){
 
     /* ---------- 1. 读 Header ---------- */
+    u0_printf("[BOOT] Reading OTA Header from external Flash addr %u...\r\n", ota_info.header_addr);
     gd25_read((uint8_t*)&ota_header, ota_info.header_addr, OTA_HEADER_SIZE);
+
+    /* ===== 调试：打印读取到的前16字节 ===== */
+    u0_printf("[BOOT DEBUG] First 16 bytes from Flash addr %u (hex): ", ota_info.header_addr);
+    uint8_t *debug_ptr = (uint8_t*)&ota_header;
+    for (int i = 0; i < 16; i++) {
+        u0_printf("%02X ", debug_ptr[i]);
+    }
+    u0_printf("\r\n");
+
+    /* ===== 调试：打印Magic Number详细信息 ===== */
+    u0_printf("[BOOT DEBUG] Read Magic: 0x%08X\r\n", ota_header.magic);
+    u0_printf("[BOOT DEBUG] Expected Magic: 0x%08X\r\n", OTA_HEADER_MAGIC);
+    u0_printf("[BOOT DEBUG] seg_count: %u\r\n", ota_header.seg_count);
+    u0_printf("[BOOT DEBUG] total_len: %u\r\n", ota_header.total_len);
 
     if(ota_header.magic != OTA_HEADER_MAGIC){
         u0_printf("OTA header magic error\r\n");

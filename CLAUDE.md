@@ -116,6 +116,8 @@ The `shared/` directory contains code used by both Boot and APP:
 
 ## OTA Update Protocol
 
+### MQTT-based OTA (Legacy)
+
 The APP receives MQTT messages via ESP8266 on topic `device/ota`:
 
 1. **Start frame**: `OTA:START:<total_size>` - Initializes external Flash write
@@ -123,6 +125,70 @@ The APP receives MQTT messages via ESP8266 on topic `device/ota`:
 3. **End frame**: `OTA:END` - Writes OTA_Header to page 0, sets boot_flag in EEPROM, reboots
 
 On next boot, bootloader detects flag and copies firmware from external Flash to internal Flash APP region.
+
+### HTTP-based OTA (OneNET Platform)
+
+**Implementation files:**
+
+- `shared/BSP/Include/onenet_http_ota.h` - API definitions
+- `shared/BSP/Source/onenet_http_ota.c` - Implementation
+
+**Three-step process:**
+
+#### Step 1: Report Device Version
+
+- **Method**: `POST /fuse-ota/{ProductID}/{DeviceName}/version`
+- **Headers**: `Authorization: <token>`, `Content-Type: application/json`
+- **Body**: `{"s_version":"V1.0", "f_version":"V1.0"}`
+- **Success**: Response contains `"msg":"succ"`
+- **API**: `http_ota_report_version()`
+
+#### Step 2: Check for OTA Task
+
+- **Method**: `GET /fuse-ota/{ProductID}/{DeviceName}/check?type=2&version=V1.0`
+- **Headers**: `Authorization: <token>`
+- **Response (no task)**: `"msg":"not exist"` → Stop OTA, return to normal operation
+- **Response (has task)**: `"msg":"succ"` with JSON data:
+
+  ```json
+  {
+    "data": {
+      "target": "V2.0",
+      "tid": "1232907",
+      "size": 30697,
+      "md5": "..."
+    }
+  }
+  ```
+
+- **Extract**: `target` (new version), `tid` (task ID), `size` (firmware size)
+- **Storage**: Save to EEPROM (AT24C256) for persistence
+- **API**: `http_ota_check_update()`
+
+#### Step 3: Download Firmware in Chunks
+
+- **Method**: `GET /fuse-ota/{ProductID}/{DeviceName}/{tid}/download`
+- **Headers**: `Authorization: <token>`, `Range: bytes=0-255`
+- **Chunk size**: 256 bytes per request
+- **Process**:
+
+  1. Send GET request with Range header
+  2. Find HTTP header end marker `\r\n\r\n`
+  3. Extract binary data (starts 4 bytes after marker)
+  4. Write 256 bytes to external Flash (W25Q64/GD25Q40E)
+  5. Increment Range and repeat until all bytes downloaded
+
+- **Completion**: Write OTA_Header, set boot_flag in EEPROM, reboot
+- **API**: `http_ota_download_firmware()`
+
+**Full process API**: `http_ota_full_process()` - Executes all three steps sequentially
+
+**Key differences from MQTT OTA:**
+
+- Uses HTTP GET/POST instead of MQTT publish/subscribe
+- Requires explicit Range header for chunked download
+- Server-side task management (tid-based)
+- Version reporting before update check
 
 ## Bootloader CLI Commands
 

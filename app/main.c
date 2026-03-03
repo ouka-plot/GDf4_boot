@@ -1,20 +1,30 @@
 /*!
     \file    main.c
-    \brief   APP entry - Serial-based MQTT publisher for OneNET
+    \brief   APP entry - Serial-based MQTT publisher for OneNET with HTTP OTA
 
-    \version 2026-03-02, V2.2.0
+    \version 2026-03-02, V2.3.0
 
     Serial Commands:
       TEMP <value>     - Set temperature (e.g: TEMP 25.5)
       POWER <0|1>      - Set power state (e.g: POWER 1)
-      SEND             - Send data to OneNET
+      SEND             - Publish data to OneNET
+      OTA              - Check for HTTP OTA update
       HELP             - Show help
 */
 
 #include "main.h"
+#include "onenet_http_ota.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* Current firmware version */
+#define FIRMWARE_VERSION "V1.0"
+#define FIRMWARE_ESP_VERSION "V1.0"
+
+/* OneNET platform credentials */
+#define ONENET_PRODUCT_ID "0qK3k8n0M2"
+#define ONENET_DEVICE_NAME "device"
 
 /* Sensor simulation variables - OneNET properties */
 static float sensor_temperature = 25.0f;
@@ -187,7 +197,148 @@ int main(void) {
   u0_printf("[MAIN] username = %s\r\n", mqtt.user_name);
   u0_printf("[MAIN] password length = %u\r\n", (unsigned)strlen(mqtt.pass_word));
 
-  /* Initialize ESP8266 and connect to MQTT broker */
+  /* ========== Step 1: Check HTTP OTA before connecting MQTT ========== */
+  u0_printf("\r\n========== HTTP OTA Check ==========\r\n");
+  u0_printf("[OTA] Current version: %s\r\n", FIRMWARE_VERSION);
+  u0_printf("[OTA] Checking for updates...\r\n");
+
+  /* Initialize ESP8266 WiFi (without MQTT) */
+  u0_printf("[ESP] Initializing WiFi...\r\n");
+  usart1_init(115200);
+
+  /* 閲嶇疆 ESP8266 浠ユ竻闄や箣鍓嶇殑鐘舵€� */
+  u0_printf("[ESP] Resetting ESP8266...\r\n");
+  ESP8266_SendCmd("AT+RST\r\n", "ready", 5000);  /* 绛夊緟 ESP8266 閲嶅惎瀹屾垚 */
+  delay_ms(3000);  /* 棰濆绛夊緟绋冲畾 */
+
+  /* Connect WiFi only */
+  char cmd_buf[256];
+  uint8_t wifi_ok = 0;
+
+  /* Test AT */
+  for (uint8_t i = 0; i < 5; i++) {
+    if (ESP8266_SendCmd("AT\r\n", "OK", 1000)) {
+      wifi_ok = 1;
+      break;
+    }
+    delay_ms(1000);
+  }
+
+  if (!wifi_ok) {
+    u0_printf("[ESP] AT command failed, skip OTA check\r\n");
+    goto skip_ota_check;
+  }
+
+  ESP8266_SendCmd("ATE0\r\n", "OK", 500);
+  ESP8266_SendCmd("AT+CWMODE=1\r\n", "OK", 500);
+
+  /* Connect WiFi */
+  snprintf(cmd_buf, sizeof(cmd_buf), "AT+CWJAP=\"%s\",\"%s\"\r\n",
+           net_cfg.wifi_ssid, net_cfg.wifi_pass);
+  if (!ESP8266_SendCmd(cmd_buf, "WIFI GOT IP", 20000)) {
+    u0_printf("[ESP] WiFi connect failed, skip OTA check\r\n");
+    goto skip_ota_check;
+  }
+  u0_printf("[ESP] WiFi connected\r\n");
+
+  /* 绛夊緟 WiFi 杩炴帴瀹屽叏绋冲畾锛圖HCP銆丏NS銆丄RP 绛夊悗鍙颁换鍔★級*/
+  u0_printf("[ESP] Waiting 8s for WiFi to fully stabilize...\r\n");
+  delay_ms(8000);
+
+  /* 纭繚 ESP8266 绌洪棽鐘舵€� */
+  uint8_t esp_ready = 0;
+  for (uint8_t i = 0; i < 10; i++) {
+    if (ESP8266_SendCmd("AT\r\n", "OK", 2000)) {
+      esp_ready = 1;
+      u0_printf("[ESP] ESP8266 is ready\r\n");
+      break;
+    }
+    u0_printf("[ESP] Waiting for ESP8266 ready... (%d/10)\r\n", i+1);
+    delay_ms(1000);
+  }
+
+  if (!esp_ready) {
+    u0_printf("[ESP] ESP8266 not ready, skip OTA check\r\n");
+    goto skip_ota_check;
+  }
+
+  /* 鎵撳嵃 WiFi 淇℃伅鐢ㄤ簬璋冭瘯 */
+  ESP8266_SendCmd("AT+CIFSR\r\n", "OK", 3000);
+  delay_ms(200);
+
+  /* Execute HTTP OTA check (steps 1 & 2) */
+  http_ota_err_t ota_ret;
+  http_ota_task_t task_info;
+
+  /* Step 1: Report version */
+  ota_ret = http_ota_report_version(
+      HTTP_OTA_PRODUCT_ID,
+      HTTP_OTA_DEVICE_NAME,
+      FIRMWARE_VERSION,
+      FIRMWARE_ESP_VERSION,
+      mqtt.pass_word_ota
+  );
+
+  if (ota_ret != HTTP_OTA_OK) {
+    u0_printf("[OTA] Version report failed (err=%d), continue to MQTT\r\n", ota_ret);
+    goto skip_ota_check;
+  }
+
+  delay_ms(500);
+
+  /* Step 2: Check for update */
+  ota_ret = http_ota_check_update(
+      HTTP_OTA_PRODUCT_ID,
+      HTTP_OTA_DEVICE_NAME,
+      FIRMWARE_VERSION,
+      mqtt.pass_word_ota,
+      &task_info
+  );
+
+  /* 调试：打印 check_update 返回值 */
+  u0_printf("[OTA DEBUG] http_ota_check_update returned: %d\r\n", ota_ret);
+
+  if (ota_ret == HTTP_OTA_ERR_NO_TASK) {
+    u0_printf("[OTA] No update available, continue to MQTT\r\n");
+    goto skip_ota_check;
+  }
+
+  if (ota_ret != HTTP_OTA_OK) {
+    u0_printf("[OTA] Check update failed (err=%d), continue to MQTT\r\n", ota_ret);
+    goto skip_ota_check;
+  }
+
+  /* 调试：确认进入下载流程 */
+  u0_printf("[OTA DEBUG] Entering download phase...\r\n");
+
+  /* Step 3: Update available, download and install */
+  u0_printf("\r\n========================================\r\n");
+  u0_printf("[OTA] NEW FIRMWARE AVAILABLE!\r\n");
+  u0_printf("  Current: %s\r\n", FIRMWARE_VERSION);
+  u0_printf("  Target:  %s\r\n", task_info.target_version);
+  u0_printf("  Size:    %u bytes\r\n", task_info.firmware_size);
+  u0_printf("  Task ID: %s\r\n", task_info.task_id);
+  u0_printf("========================================\r\n");
+  u0_printf("[OTA] Starting download in 3 seconds...\r\n");
+  delay_ms(3000);
+
+  ota_ret = http_ota_download_firmware(
+      HTTP_OTA_PRODUCT_ID,
+      HTTP_OTA_DEVICE_NAME,
+      task_info.task_id,
+      mqtt.pass_word_ota,
+      task_info.firmware_size
+  );
+
+  /* If we reach here, download failed (success would reboot) */
+  u0_printf("[OTA] Download failed (err=%d), continue to MQTT\r\n", ota_ret);
+
+skip_ota_check:
+  u0_printf("========== OTA Check Complete ==========\r\n\r\n");
+
+  /* ========== Step 2: Initialize ESP8266 and connect to MQTT ========== */
+  u0_printf("[MQTT] Initializing MQTT connection...\r\n");
+
   esp8266_err_t err = ESP8266_Init(&net_cfg);
   if (err != ESP_OK) {
     u0_printf("[APP] ESP8266 init failed (err=%d), MQTT disabled\r\n", err);
@@ -260,12 +411,29 @@ int main(void) {
           u0_printf("[SEND] Publish failed (ret=%d)\r\n", ret);
         }
       }
+      /* OTA - Manual OTA check */
+      else if (strncmp(cmd_line, "OTA", 3) == 0) {
+        u0_printf("\r\n[OTA] Manual OTA check triggered\r\n");
+        http_ota_err_t ret = http_ota_full_process(
+            HTTP_OTA_PRODUCT_ID,
+            HTTP_OTA_DEVICE_NAME,
+            FIRMWARE_VERSION,
+            mqtt.pass_word_ota
+        );
+        if (ret == HTTP_OTA_ERR_NO_TASK) {
+          u0_printf("[OTA] No update available\r\n");
+        } else if (ret != HTTP_OTA_OK) {
+          u0_printf("[OTA] Check failed (err=%d)\r\n", ret);
+        }
+        /* Success would reboot, won't reach here */
+      }
       /* HELP - Show command list */
       else if (strncmp(cmd_line, "HELP", 4) == 0) {
         u0_printf("\r\n===== [APP] Serial Commands =====\r\n");
         u0_printf("  TEMP <value>  - Set temperature (e.g: TEMP 25.5)\r\n");
         u0_printf("  POWER <0|1>   - Set power state (e.g: POWER 1)\r\n");
         u0_printf("  SEND          - Publish data to OneNET\r\n");
+        u0_printf("  OTA           - Check for firmware update\r\n");
         u0_printf("  HELP          - Show this help\r\n");
         u0_printf("==================================\r\n\r\n");
       }

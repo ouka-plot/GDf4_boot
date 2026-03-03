@@ -59,6 +59,7 @@ include_directories(
     ${SHARED_DIR}/SYSTEM/Include
     ${SHARED_DIR}/BSP/Include
     ${SHARED_DIR}/LIB/Include
+    ${SHARED_DIR}/HWL/Include
 )
 
 # -------------------------------------------------------------------------
@@ -80,6 +81,7 @@ file(GLOB_RECURSE SHARED_SOURCES
     "${SHARED_DIR}/BSP/Source/fmc.c"
     "${SHARED_DIR}/BSP/Source/boot.c"
     "${SHARED_DIR}/BSP/Source/net_config.c"
+    "${SHARED_DIR}/HWL/Source/*.c"
     # esp8266.c ≤ª±‡»Î Boot
 )
 
